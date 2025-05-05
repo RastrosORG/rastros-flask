@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastros: login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <script>
+        function toggleSignup() {
+            var loginForm = document.getElementById('login-form');
+            var signupForm = document.getElementById('signup-form');
+            if (signupForm.style.display === 'none') {
+                signupForm.style.display = 'block';
+                loginForm.style.display = 'none';
+            } else {
+                signupForm.style.display = 'none';
+                loginForm.style.display = 'block';
+            }
+        }
+
+        function toggleRoleFields() {
+            var isEvaluator = document.getElementById('is-evaluator').checked;
+            var isStudent = document.getElementById('is-student').checked;
+        
+            var evaluatorFields = document.getElementById('evaluator-fields');
+            var studentFields = document.getElementById('student-fields');
+        
+            // Mostrar/ocultar campos
+            evaluatorFields.style.display = isEvaluator ? 'block' : 'none';
+            studentFields.style.display = isStudent ? 'block' : 'none';
+        
+            // Adicionar/remover atributo required
+            var authKeyField = document.getElementById('auth-key');
+            var evaluatorEmailField = document.querySelector('input[name="evaluator-email"]');
+            var studentAuthKeyField = document.getElementById('student-auth-key');
+        
+            if (isEvaluator) {
+                authKeyField.setAttribute('required', true);
+                evaluatorEmailField.setAttribute('required', true);
+                studentAuthKeyField.removeAttribute('required');
+            } else if (isStudent) {
+                studentAuthKeyField.setAttribute('required', true);
+                authKeyField.removeAttribute('required');
+                evaluatorEmailField.removeAttribute('required');
+            } else {
+                authKeyField.removeAttribute('required');
+                evaluatorEmailField.removeAttribute('required');
+                studentAuthKeyField.removeAttribute('required');
+            }
+        }
+
+        function validateForm() {
+            var isEvaluator = document.getElementById('is-evaluator').checked;
+            var isStudent = document.getElementById('is-student').checked;
+
+            if (!isEvaluator && !isStudent) {
+                alert("Por favor, selecione uma opção: 'Sou Avaliador' ou 'Sou Aluno'.");
+                return false;
+            }
+
+            if (isEvaluator) {
+                var authKey = document.getElementById('auth-key').value;
+                if (!authKey) {
+                    alert("Por favor, insira a chave de autenticação para avaliadores.");
+                    return false;
+                }
+            }
+
+            if (isStudent) {
+                var studentAuthKey = document.getElementById('student-auth-key').value;
+                if (!studentAuthKey) {
+                    alert("Por favor, insira a chave de autenticação para alunos.");
+                    return false;
+                }
+            }
+
+            return true; // Permite o envio do formulário
+        }
+
+        function togglePasswordVisibility(inputId, checkboxId) {
+            var inputField = document.getElementById(inputId);
+            var checkbox = document.getElementById(checkboxId);
+            inputField.type = checkbox.checked ? 'text' : 'password';
+        }
+
+        // Novas funções para os termos de uso
+        function mostrarTermos(event) {
+            if (!validateForm()) {
+                return false;
+            }
+            event.preventDefault();
+            document.getElementById('termosModal').style.display = 'block';
+        }
+
+        function verificarTermos() {
+            var checkbox = document.getElementById('concordoTermos');
+            document.getElementById('confirmarTermos').disabled = !checkbox.checked;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var signupForm = document.querySelector('#signup-form form');
+            if (signupForm) {
+                signupForm.addEventListener('submit', mostrarTermos);
+            }
+
+            document.getElementById('confirmarTermos')?.addEventListener('click', function() {
+                signupForm?.submit();
+            });
+
+            document.getElementById('cancelarTermos')?.addEventListener('click', function() {
+                document.getElementById('termosModal').style.display = 'none';
+            });
+
+            document.getElementById('concordoTermos')?.addEventListener('change', verificarTermos);
+        });
+    </script>
+</head>
+<body>
+    <div class="rastros">
+        <h1 id="site-title" class="site-title tracking-in-expand">RASTR<span class="o-image"></span>S</h1>
+    </div>  
+    
+    <div class="login-container">
+        <div class="form-container">
+            <div id="login-form">
+                <h2>Login</h2>
+                <form action="/login" method="post">
+                    <input type="text" name="username" placeholder="Usuário" required>
+                    <input type="password" name="password" placeholder="Senha" required>
+                    <button type="submit">Entrar</button>
+                </form>
+                <p>Não possui login? <a href="#" onclick="toggleSignup()">Clique aqui para se cadastrar</a></p>
+            </div>
+            
+            <div id="signup-form" style="display: none;">
+                <h2>Cadastro</h2>
+                <form action="/signup" method="post" id="signupForm">
+                    <input type="text" name="new-username" placeholder="Usuário" required>
+                    <input type="password" name="new-password" placeholder="Senha" required>
+                    <input type="password" name="confirm-password" placeholder="Confirme a Senha" required>
+                    
+                    <div class="role-selection">
+                        <label>
+                            <input type="radio" id="is-evaluator" name="role" value="evaluator" onclick="toggleRoleFields()" required> Sou Avaliador
+                        </label>
+                        <label>
+                            <input type="radio" id="is-student" name="role" value="student" onclick="toggleRoleFields()" required> Sou Aluno
+                        </label>
+                    </div>
+                    
+                    <div id="evaluator-fields" style="display: none;">
+                        <div class="code-container">
+                            <input type="password" name="auth-key" id="auth-key" placeholder="Chave de Autenticação" autocomplete="off">
+                            <label>
+                                <input type="checkbox" id="toggle-auth-key" onchange="togglePasswordVisibility('auth-key', 'toggle-auth-key')"> Exibir
+                            </label>
+                        </div>
+                        <input type="email" name="evaluator-email" placeholder="E-mail">
+                    </div>
+                    
+                    <div id="student-fields" style="display: none;">
+                        <div class="code-container">
+                            <input type="password" name="student-auth-key" id="student-auth-key" placeholder="Chave de Autenticação" autocomplete="off">
+                            <label>
+                                <input type="checkbox" id="toggle-student-auth-key" onchange="togglePasswordVisibility('student-auth-key', 'toggle-student-auth-key')"> Exibir
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit">Cadastrar</button>
+                </form>                
+                <p>Já possui login? <a href="#" onclick="toggleSignup()">Clique aqui para entrar</a></p>
+            </div>
+
+            {% if error %}
+                <p style="color: red;">{{ error }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal de Termos de Uso -->
+    <div id="termosModal" class="modal">
+        <div class="modal-content">
+            <h2>TERMO DE RESPONSABILIDADE NO TRATAMENTO DE DADOS PESSOAIS</h2>
+            <div class="termos-texto">
+                <p><strong>Comprometo-me</strong> a tratar os dados pessoais de pessoas desaparecidas com o mais alto grau de responsabilidade, zelo e respeito à dignidade humana, em estrita observância à <strong>Lei nº 13.709/2018</strong> – Lei Geral de Proteção de Dados Pessoais (LGPD), bem como às demais normas legais e éticas aplicáveis.</p>
+                
+                <p><strong>Declaro estar ciente</strong> de que os dados pessoais, incluindo dados sensíveis eventualmente envolvidos no contexto de desaparecimentos, devem ser utilizados única e exclusivamente para as finalidades legítimas e específicas relacionadas à:</p>
+                
+                <ul class="termos-lista">
+                    <li>Localização da pessoa desaparecida</li>
+                    <li>Proteção de seus direitos fundamentais</li>
+                    <li>Cooperação com os órgãos competentes</li>
+                </ul>
+                
+                <h3 class="termos-subtitulo">Compromissos específicos:</h3>
+                
+                <ul class="termos-lista">
+                    <li><strong>Utilizar os dados</strong> somente para os fins previstos e legalmente autorizados;</li>
+                    <li><strong>Garantir</strong> a segurança, a confidencialidade e a integridade das informações acessadas ou compartilhadas;</li>
+                    <li><strong>Abster-me</strong> de divulgar, repassar, compartilhar ou expor indevidamente qualquer dado pessoal a que eu tenha acesso no exercício de minhas atividades;</li>
+                    <li><strong>Comunicar imediatamente</strong> aos responsáveis pela gestão dos dados qualquer incidente de segurança, vazamento, uso indevido ou suspeita de violação de dados pessoais;</li>
+                    <li><strong>Respeitar</strong> os direitos dos titulares dos dados e de seus representantes legais, incluindo os direitos de acesso, correção, anonimização e revogação do consentimento;</li>
+                    <li><strong>Cumprir</strong> todas as orientações institucionais e normativas internas sobre o tratamento de dados pessoais de pessoas desaparecidas.</li>
+                </ul>
+                
+                <div class="termos-alerta">
+                    <p><strong>Declaro estar ciente</strong> de que o descumprimento das obrigações aqui assumidas poderá ensejar responsabilização administrativa, civil e/ou penal, nos termos da legislação vigente.</p>
+                </div>
+            </div>
+            <div class="termos-acordo">
+                <label>
+                    <input type="checkbox" id="concordoTermos"> Li e concordo com os termos de uso acima
+                </label>
+            </div>
+            <div class="modal-botoes">
+                <button id="confirmarTermos" disabled>Concordar e Cadastrar</button>
+                <button id="cancelarTermos">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rodapé -->
+    <footer class="apoiador-footer">
+        <img src="{{ url_for('static', filename='imagens/INTELIS - (Branco).png') }}" alt="Logo do apoiador">
+    </footer>
+</body>
+</html>

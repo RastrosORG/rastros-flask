@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Grupos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/groups.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cronometro.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    
+    <!-- Inclui o menu -->
+    {% include 'menu.html' %}
+
+    <!-- Adiciona o cronômetro -->
+    {% include 'cronometro.html' %}
+
+    <!-- Inclui o JavaScript do cronômetro -->
+    <script src="{{ url_for('static', filename='js/cronometro.js') }}"></script>
+
+    <!-- Banner com imagem de fundo -->
+    <div class="banner"></div>
+
+    <div class="content">
+        <div class="title-header">
+            <h1 class="tracking-in-expand">Grupos</h1>
+            <div class="title-divider"></div>
+        </div>
+
+        <!-- Container para os dois blocos principais -->
+        <div class="group-container">
+            <!-- Bloco de Criar Grupo ou Meu Grupo -->
+            <div id="group-block" class="group-block">
+                {% if user.is_leader or user.is_member %}
+                    <a href="{{ url_for('group_detail', group_id=user.is_group) }}" class="group-block-link">
+                        <h2>Minha Equipe</h2>
+                        <p>Gerencie ou participe do seu grupo atual.</p>
+                    </a>
+                {% else %}
+                    <a href="#" onclick="showCreateGroupForm()" class="group-block-link">
+                        <h2>Criar Equipe</h2>
+                        <p>Crie um novo grupo e convide membros.</p>
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Formulário de criação de grupo (inicialmente oculto) -->
+            <div id="create-group" class="group-block" style="display: none;">
+                <form method="POST" action="{{ url_for('groups') }}">
+                    <h2>Criar Equipe</h2>
+                    <label for="group-name">Nome do Grupo:</label>
+                    <input type="text" id="group-name" name="group-name" required>
+
+                    <label>Adicionar Membros:</label>
+                    <div class="members-list">
+                        {% for user in users %}
+                            {% if not user.is_member and not user.is_leader and not user.is_evaluator %}
+                                <div class="member-item">
+                                    <input type="checkbox" id="member-{{ user['id'] }}" name="members" value="{{ user['id'] }}">
+                                    <label for="member-{{ user['id'] }}">{{ user['username'] }}</label>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="submit">Criar Grupo</button>
+                        <button type="button" onclick="hideCreateGroupForm()" class="cancel-button">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Bloco da Lista de Grupos -->
+            <div class="group-list-block-exclusive">
+                <h2>Grupos Existentes</h2>
+                <div class="group-list">
+                    {% for group in groups %}
+                        <div class="group-item">
+                            <a href="{{ url_for('group_detail', group_id=group['id']) }}">
+                                <p>{{ group['name'] }}</p>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Função para mostrar o formulário de criação de grupo
+        function showCreateGroupForm() {
+            document.getElementById('group-block').style.display = 'none'; // Oculta o bloco "Criar Grupo"
+            document.getElementById('create-group').style.display = 'block'; // Exibe o formulário
+        }
+
+        // Função para ocultar o formulário e voltar ao bloco "Criar Grupo"
+        function hideCreateGroupForm() {
+            document.getElementById('create-group').style.display = 'none'; // Oculta o formulário
+            document.getElementById('group-block').style.display = 'block'; // Exibe o bloco "Criar Grupo"
+        }
+
+        // Exibe a mensagem flutuante (se houver)
+        const urlParams = new URLSearchParams(window.location.search);
+        const message = urlParams.get('message');
+        if (message) {
+            alert(message); // Exibe a mensagem como um alerta
+        }
+    </script>
+</body>
+</html>

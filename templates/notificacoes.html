@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificações</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notificacoes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cronometro.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- Inclui o menu -->
+    {% include 'menu.html' %}
+
+    <!-- Adiciona o cronômetro -->
+    {% include 'cronometro.html' %}
+
+    <!-- Inclui o JavaScript do cronômetro -->
+    <script src="{{ url_for('static', filename='js/cronometro.js') }}"></script>
+
+    <div class="content">
+        <h2>Notificações</h2>
+
+        <!-- Container das notificações -->
+        <div class="notifications">
+            {% if notifications %}
+                {% for notification in notifications %}
+                    <div class="notification">
+                        <p>{{ notification['message']|safe }}</p>
+                        <!-- Botão "X" para exclusão manual -->
+                        <form method="POST" action="{{ url_for('delete_notification', notification_id=notification['id']) }}" class="action-form">
+                            <button type="submit" class="delete-button"><i class="fas fa-times"></i></button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty-message">Você não tem notificações.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
