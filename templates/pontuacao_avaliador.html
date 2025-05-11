@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pontuação - Avaliador</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pontuacao_avaliador.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cronometro.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    
+    {% include 'menu.html' %}
+    {% include 'cronometro.html' %}
+
+    <script src="{{ url_for('static', filename='js/cronometro.js') }}"></script>
+
+    <div class="banner"></div>
+
+    <div class="pontuacao-container">
+        <h1 class="tracking-in-expand">Pontuação - Avaliador</h1>
+
+        <div class="subtitulo-container" id="subtituloContainer">
+            <i class="fas fa-arrow-left voltar-icone" id="voltarIcone" style="display: none;" onclick="voltarEtapaAnterior()"></i>
+            <h2 id="subtitulo">Tarefas</h2>
+            <a href="/favoritos" class="favoritos-btn">
+                <i class="fas fa-star"></i> Favoritos
+            </a>
+        </div>
+
+        <div class="etapa" id="etapaTarefas">
+            <div class="propostas-grid">
+                {% if propostas %}
+                    {% for proposta in propostas %}
+                    <article class="proposta-card" data-proposta-id="{{ proposta.id }}">
+                        <div class="card-header">
+                            <h3>{{ proposta.nome }}</h3>
+                            <div class="card-body">
+                                <p class="proposta-descricao">{{ proposta.descricao }}</p>
+                                <button class="expand-desc-btn" style="display: none;">
+                                    <i class="fas fa-chevron-down"></i> Ler mais
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            Ver grupos
+                        </div>
+                    </article>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-proposals">Nenhuma proposta encontrada.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="etapa" id="etapaGrupos" style="display: none;">
+            <ul id="listaGrupos"></ul>
+        </div>
+        
+        <div class="etapa" id="etapaRespostas" style="display: none;">
+            <ul id="listaRespostas"></ul>
+        </div>
+        
+        <div class="etapa" id="etapaDetalhes" style="display: none;">
+            <h2 id="respostaTitulo"></h2>
+            <p><strong>Grupo:</strong> <span id="respostaGrupo"></span></p>
+            <p><strong>Descrição:</strong> <span id="respostaDescricao"></span></p>
+            <p><strong>Categorias:</strong> <span id="respostaCategorias"></span></p>
+            <p><strong>Arquivos Anexados:</strong></p>
+            <ul id="respostaArquivos"></ul>
+            <p><strong>Observação:</strong> <span id="respostaObservacao"></span></p>
+            <p><strong>Pontuação:</strong> <span id="respostaPontuacao"></span></p>
+            <button onclick="excluirResposta(event)">EXCLUIR RESPOSTA</button>
+        </div>
+    </div>
+
+    <script>
+        let propostaSelecionadaId = null;
+        let grupoSelecionadoId = null;
+        let respostaSelecionadaId = null;
+
+        function initPropostaCards() {
+            document.querySelectorAll('.proposta-card').forEach(card => {
+                const descricao = card.querySelector('.proposta-descricao');
+                const btnExpand = card.querySelector('.expand-desc-btn');
+                const textoOriginal = descricao.textContent.trim();
+                
+                if (textoOriginal.length > 150 || descricao.scrollHeight > descricao.clientHeight) {
+                    btnExpand.style.display = 'flex';
+                    descricao.textContent = textoOriginal.substring(0, 150) + '...';
+                    descricao.dataset.fulltext = textoOriginal;
+                    
+                    btnExpand.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (descricao.classList.contains('expanded')) {
+                            descricao.textContent = descricao.dataset.fulltext.substring(0, 150) + '...';
+                            descricao.classList.remove('expanded');
+                            btnExpand.innerHTML = '<i class="fas fa-chevron-down"></i> Ler mais';
+                        } else {
+                            descricao.textContent = descricao.dataset.fulltext;
+                            descricao.classList.add('expanded');
+                            btnExpand.innerHTML = '<i class="fas fa-chevron-up"></i> Ler menos';
+                        }
+                    });
+                }
+                
+                card.querySelector('.card-footer').addEventListener('click', function() {
+                    const propostaId = card.getAttribute('data-proposta-id');
+                    const propostaNome = card.querySelector('h3').textContent;
+                    mostrarGrupos(propostaId, propostaNome);
+                });
+            });
+        }
+
+        function mostrarGrupos(propostaId, propostaNome) {
+            propostaSelecionadaId = propostaId;
+            fetch(`/get_grupos_por_proposta/${propostaId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar grupos');
+                    }
+                    return response.json();
+                })
+                .then(grupos => {
+                    const listaGrupos = document.getElementById('listaGrupos');
+                    
+                    if (grupos.error) {
+                        listaGrupos.innerHTML = '<li>Erro ao carregar grupos</li>';
+                        return;
+                    }
+        
+                    if (!grupos || grupos.length === 0) {
+                        listaGrupos.innerHTML = '<li>Nenhum grupo encontrado.</li>';
+                        return;
+                    }
+        
+                    listaGrupos.innerHTML = grupos.map(grupo => `
+                        <li onclick="mostrarRespostas(${grupo.id}, '${grupo.nome.replace(/'/g, "\\'")}')">
+                            ${grupo.nome}
+                        </li>
+                    `).join('');
+                    
+                    document.getElementById('subtitulo').textContent = "Grupos que aceitaram a proposta";
+                    document.getElementById('voltarIcone').style.display = 'inline-block';
+                    document.getElementById('etapaTarefas').style.display = 'none';
+                    document.getElementById('etapaGrupos').style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    document.getElementById('listaGrupos').innerHTML = '<li>Erro ao carregar grupos</li>';
+                });
+        }
+
+        function mostrarRespostas(grupoId, grupoNome) {
+            grupoSelecionadoId = grupoId;
+            fetch(`/get_respostas_avaliadas/${propostaSelecionadaId}/${grupoId}`)
+                .then(response => response.json())
+                .then(respostas => {
+                    const listaRespostas = document.getElementById('listaRespostas');
+                    listaRespostas.innerHTML = respostas.length ? 
+                        respostas.map(resposta => `
+                            <li onclick="mostrarDetalhesResposta(${JSON.stringify(resposta).replace(/"/g, '&quot;')})">
+                                <span class="resposta-nome">${resposta.titulo}</span>
+                                <span class="resposta-pontuacao">${resposta.pontuacao} pontos</span>
+                            </li>
+                        `).join('') : 
+                        '<li>Nada foi encontrado.</li>';
+                    
+                    document.getElementById('subtitulo').textContent = "Respostas Avaliadas";
+                    document.getElementById('voltarIcone').style.display = 'inline-block';
+                    document.getElementById('etapaGrupos').style.display = 'none';
+                    document.getElementById('etapaRespostas').style.display = 'block';
+                });
+        }
+
+        function mostrarDetalhesResposta(resposta) {
+            respostaSelecionadaId = resposta.id;
+            
+            document.getElementById('respostaTitulo').textContent = resposta.titulo || "Detalhes da Resposta";
+            document.getElementById('respostaGrupo').textContent = resposta.grupo_nome || "Sem grupo";
+            document.getElementById('respostaDescricao').textContent = resposta.descricao || "Sem descrição";
+            document.getElementById('respostaCategorias').textContent = resposta.categorias ? resposta.categorias.join(', ') : "Sem categorias";
+            document.getElementById('respostaObservacao').textContent = resposta.observacao || "Sem observação";
+            document.getElementById('respostaPontuacao').textContent = resposta.pontuacao || "0";
+            
+            const arquivosLista = document.getElementById('respostaArquivos');
+            arquivosLista.innerHTML = resposta.arquivos_completos && resposta.arquivos_completos.length ? 
+                resposta.arquivos_completos.map(arquivo => `
+                    <li>
+                        <a href="{{ url_for('static', filename='') }}${arquivo}" target="_blank">
+                            ${arquivo.split('/').pop()}
+                        </a>
+                    </li>
+                `).join('') : 
+                '<li>Sem arquivos</li>';
+            
+            document.getElementById('subtitulo').textContent = resposta.titulo || "Detalhes da Resposta";
+            document.getElementById('voltarIcone').style.display = 'inline-block';
+            document.getElementById('etapaRespostas').style.display = 'none';
+            document.getElementById('etapaDetalhes').style.display = 'block';
+        }
+
+        function excluirResposta(event) {
+            event.preventDefault();
+            
+            if (!respostaSelecionadaId) return;
+            
+            if (confirm('Tem certeza que deseja excluir esta resposta?')) {
+                fetch(`/excluir_resposta/${respostaSelecionadaId}`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Resposta excluída com sucesso!');
+                            location.reload();
+                        }
+                    });
+            }
+        }
+
+        function voltarEtapaAnterior() {
+            const etapaDetalhes = document.getElementById('etapaDetalhes');
+            const etapaRespostas = document.getElementById('etapaRespostas');
+            const etapaGrupos = document.getElementById('etapaGrupos');
+            const etapaTarefas = document.getElementById('etapaTarefas');
+
+            if (etapaDetalhes.style.display === 'block') {
+                etapaDetalhes.style.display = 'none';
+                etapaRespostas.style.display = 'block';
+                document.getElementById('subtitulo').textContent = "Respostas Avaliadas";
+            } else if (etapaRespostas.style.display === 'block') {
+                etapaRespostas.style.display = 'none';
+                etapaGrupos.style.display = 'block';
+                document.getElementById('subtitulo').textContent = "Grupos que aceitaram a proposta";
+            } else if (etapaGrupos.style.display === 'block') {
+                fetch(window.location.href)
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        document.getElementById('etapaTarefas').innerHTML = doc.getElementById('etapaTarefas').innerHTML;
+                        
+                        etapaGrupos.style.display = 'none';
+                        etapaTarefas.style.display = 'block';
+                        document.getElementById('subtitulo').textContent = "Tarefas";
+                        document.getElementById('voltarIcone').style.display = 'none';
+                        
+                        initPropostaCards();
+                    });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initPropostaCards);
+    </script>
+</body>
+</html>

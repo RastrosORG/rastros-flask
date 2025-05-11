@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráficos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/graficos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cronometro.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    
+    <!-- Inclui o menu -->
+    {% include 'menu.html' %}
+
+    <!-- Adiciona o cronômetro -->
+    {% include 'cronometro.html' %}
+
+    <!-- Inclui o JavaScript do cronômetro -->
+    <script src="{{ url_for('static', filename='js/cronometro.js') }}"></script>
+
+    <!-- Conteúdo da página -->
+    <div class="graficos-container">
+        <!-- Título da página -->
+        <div class="graficos-title-wrapper">
+            <h1 class="graficos-title">Gráficos</h1>
+            <div class="graficos-title-divider"></div>
+        </div>
+
+        <!-- Subtítulo: Ranking -->
+        <h2 class="graficos-subtitle">Desempenho</h2>
+
+        <!-- Gráfico de Ranking -->
+        <div class="grafico-wrapper">
+            <canvas id="rankingChart"></canvas>
+        </div>
+
+        <!-- Legenda do Gráfico de Ranking -->
+        <div class="legenda-ranking" id="legendaRanking"></div>
+
+        <!-- Subtítulo: Desempenho -->
+        <h2 class="graficos-subtitle">Ranking</h2>
+
+        <!-- Tabela de Desempenho -->
+        <div class="tabela-desempenho">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Posição</th>
+                        <th>Nome do Grupo</th>
+                        <th>Pontuação</th>
+                        <th>Respostas</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaDesempenhoBody">
+                    <!-- As linhas da tabela serão preenchidas dinamicamente pelo JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Dados do gráfico de Ranking (serão preenchidos dinamicamente pelo Flask)
+        const grupos = {{ grupos|tojson|safe if grupos else [] }};
+        const pontos = {{ pontos|tojson|safe if pontos else [] }};
+        const cores = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+    
+        // Configuração do gráfico de Ranking
+        const ctxRanking = document.getElementById('rankingChart').getContext('2d');
+        const rankingChart = new Chart(ctxRanking, {
+            type: 'bar',
+            data: {
+                labels: grupos,
+                datasets: [{
+                    label: 'Pontuação',
+                    data: pontos,
+                    backgroundColor: cores,
+                    borderColor: cores,
+                    borderWidth: 1,
+                    barThickness: 50, // Largura das colunas
+                }]
+            },
+            options: {
+                responsive: true, // Torna o gráfico responsivo
+                maintainAspectRatio: false, // Permite ajustar a proporção
+                layout: {
+                    padding: {
+                        right: 50 // Adiciona margem à direita
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: Math.max(...pontos, 2000), // Ajusta o pico do eixo Y
+                        title: {
+                            display: true,
+                            text: 'Pontos'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Grupos'
+                        },
+                        grid: {
+                            display: false // Remove as linhas de grade do eixo X
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false // Remove a legenda padrão
+                    }
+                }
+            }
+        });
+    
+        // Cria a legenda do gráfico de Ranking
+        const legendaRanking = document.getElementById('legendaRanking');
+        if (grupos.length > 0) {
+            grupos.forEach((grupo, index) => {
+                const itemLegenda = document.createElement('div');
+                itemLegenda.className = 'item-legenda';
+                itemLegenda.innerHTML = `
+                    <span class="cor-legenda" style="background-color: ${cores[index]};"></span>
+                    <span class="nome-grupo">${grupo}</span>
+                `;
+                legendaRanking.appendChild(itemLegenda);
+            });
+        } else {
+            legendaRanking.innerHTML = '<p>Nenhum grupo encontrado.</p>';
+        }
+
+        // Dados da tabela de desempenho (serão preenchidos dinamicamente pelo Flask)
+        const gruposDesempenho = {{ grupos|tojson|safe if grupos else [] }};
+        const pontosDesempenho = {{ pontos|tojson|safe if pontos else [] }};
+
+        // Função para preencher a tabela de desempenho
+        function preencherTabelaDesempenho() {
+            const tabelaBody = document.getElementById('tabelaDesempenhoBody');
+            tabelaBody.innerHTML = ''; // Limpa o conteúdo da tabela
+
+            if (gruposDesempenho.length === 0) {
+                tabelaBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum grupo encontrado.</td></tr>';
+                return;
+            }
+
+            // Combina todos os dados em um array de objetos
+            const dados = gruposDesempenho.map((grupo, index) => ({
+                nome: grupo,
+                pontos: pontosDesempenho[index],
+                respostas: respostasDesempenho[index] || 0 // Garante que seja 0 se undefined
+            }));
+
+            // Ordena os dados por pontuação (decrescente) e, em caso de empate, por nome (alfabético)
+            dados.sort((a, b) => {
+                if (b.pontos !== a.pontos) {
+                    return b.pontos - a.pontos;
+                } else {
+                    return a.nome.localeCompare(b.nome);
+                }
+            });
+
+            // Adiciona as linhas na tabela
+            let posicaoAnterior = 0;
+            let pontuacaoAnterior = null;
+
+            dados.forEach((item, index) => {
+                const tr = document.createElement('tr');
+
+                // Define a posição
+                let posicao = index + 1;
+                if (item.pontos === pontuacaoAnterior) {
+                    posicao = posicaoAnterior;
+                } else {
+                    posicaoAnterior = posicao;
+                }
+                pontuacaoAnterior = item.pontos;
+
+                // Adiciona ícone de medalha para as três primeiras posições
+                let iconeMedalha = '';
+                if (posicao === 1) {
+                    iconeMedalha = '<i class="fas fa-medal medalha medalha-ouro"></i>';
+                } else if (posicao === 2) {
+                    iconeMedalha = '<i class="fas fa-medal medalha medalha-prata"></i>';
+                } else if (posicao === 3) {
+                    iconeMedalha = '<i class="fas fa-medal medalha medalha-bronze"></i>';
+                }
+
+                // Cria as células da linha
+                tr.innerHTML = `
+                    <td>${iconeMedalha} ${posicao}º</td>
+                    <td>${item.nome}</td>
+                    <td>${item.pontos}</td>
+                    <td>${item.respostas}</td>
+                `;
+
+                tabelaBody.appendChild(tr);
+            });
+        }
+
+        const respostasDesempenho = {{ respostas|tojson|safe if respostas else [] }};
+        const dados = gruposDesempenho.map((grupo, index) => ({
+            nome: grupo,
+            pontos: pontosDesempenho[index],
+            respostas: respostasDesempenho[index]  // Novo campo
+        }));
+        // Preenche a tabela ao carregar a página
+        preencherTabelaDesempenho();
+    </script>
+</body>
+</html>

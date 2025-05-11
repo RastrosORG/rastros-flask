@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cronometro.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    
+    <!-- Inclui o menu -->
+    {% include 'menu.html' %}
+
+    <!-- Adiciona o cronômetro -->
+    {% include 'cronometro.html' %}
+
+    <!-- Inclui o JavaScript do cronômetro -->
+    <script src="{{ url_for('static', filename='js/cronometro.js') }}"></script>
+
+    <!-- Banner com imagem de fundo -->
+    <div class="banner"></div>
+
+    <div class="content">
+        <div class="title-header">
+            <h1 class="tracking-in-expand">Bem-vindo(a), {{ username }}!</h1>
+            <div class="title-divider"></div>
+        </div>
+        <div class="home-sections">
+            <a class="section" href="{{ url_for('groups') }}">
+                <h2>Equipe</h2>
+                <h3>Gerencie sua equipe</h3>
+                <p>Clique aqui para criar um novo grupo e convidar membros para sua equipe, participar de uma equipe já formada ou acessar as informações e respostas das tarefas.</p>
+            </a>
+            <a class="section" href="{{ url_for('tarefas') }}">
+                <h2>Tarefas</h2>
+                <h3>Tarefas disponíveis</h3>
+                <p>Clique aqui para explorar as propostas de tarefas disponíveis e escolha aquelas que você e sua equipe desejam responder.</p>
+            </a>
+            <a class="section" href="{{ url_for('resposta') }}">
+                <h2>Responder</h2>
+                <h3>Envie suas respostas</h3>
+                <p>Clique aqui e envie as respostas do seu grupo para que o avaliador possa analisá-las.</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

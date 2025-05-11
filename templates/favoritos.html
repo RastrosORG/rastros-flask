@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Respostas Favoritas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/favoritos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cronometro.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        @font-face {
+            font-family: 'Anonymous_Pro';
+            src: url("{{ url_for('static', filename='fontes/Anonymous_Pro/AnonymousPro-Bold.ttf') }}");
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="favoritos-page">
+    {% include 'menu.html' %}
+    {% include 'cronometro.html' %}
+
+    <main class="favoritos-container">
+        <div class="title-header">
+            <h1 class="page-title tracking-in-expand">Respostas Favoritas</h1>
+            <div class="title-divider"></div>
+        </div>
+
+        {% if respostas %}
+        <div class="respostas-grid">
+            {% for resposta in respostas %}
+            <article class="resposta-card scale-in-hor-center card-collapsed">
+                <div class="card-header">
+                    <div class="header-content">
+                        <h3>{{ resposta.titulo }}</h3>
+                        <div class="card-meta">
+                            <span class="meta-group"><i class="fas fa-users"></i> {{ resposta.grupo_nome }}</span>
+                            <span class="meta-proposta"><i class="fas fa-tasks"></i> {{ resposta.proposta_nome }}</span>
+                        </div>
+                        <div class="categorias">
+                            <i class="fas fa-tags"></i> {{ resposta.categorias_nomes }}
+                        </div>
+                        <button class="toggle-card-btn">
+                            <i class="fas fa-chevron-down"></i> Expandir
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="card-section">
+                        <h4><i class="fas fa-align-left"></i> Descrição</h4>
+                        <p>{{ resposta.descricao }}</p>
+                    </div>
+                    
+                    <div class="card-section">
+                        <h4><i class="fas fa-link"></i> Link</h4>
+                        {% if resposta.link %}
+                            <a href="{{ resposta.link }}" target="_blank" class="card-link">
+                                <i class="fas fa-external-link-alt"></i> {{ resposta.link }}
+                            </a>
+                        {% else %}
+                            <p class="no-content">Nenhum link fornecido</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-section">
+                        <h4><i class="fas fa-paperclip"></i> Arquivos</h4>
+                        {% if resposta.arquivos %}
+                            <div class="arquivos-grid">
+                                {% for arquivo in resposta.arquivos %}
+                                <a href="https://{{ S3_BUCKET_NAME }}.s3.amazonaws.com/{{ resposta.caminho_base }}/{{ arquivo }}" 
+                                   target="_blank" class="arquivo-card">
+                                    <i class="fas fa-file-download"></i>
+                                    <span>{{ arquivo }}</span>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="no-content">Nenhum arquivo anexado</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="far fa-star"></i>
+            <h3>Nenhuma resposta favoritada</h3>
+            <p>Quando você marcar respostas como favoritas, elas aparecerão aqui.</p>
+        </div>
+        {% endif %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/cronometro.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Botão de expandir/recolher card completo
+            document.querySelectorAll('.toggle-card-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const card = this.closest('.resposta-card');
+                    card.classList.toggle('card-collapsed');
+                    
+                    const icon = this.querySelector('i');
+                    if (card.classList.contains('card-collapsed')) {
+                        icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+                        icon.style.transform = 'rotate(-90deg)';
+                    } else {
+                        icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+                        icon.style.transform = '';
+                    }
+                });
+            });
+
+            // Botão de expandir descrição
+            document.querySelectorAll('.card-section:first-child p').forEach(descricao => {
+                const textoOriginal = descricao.textContent.trim();
+                
+                if (textoOriginal.length > 150) {
+                    const spanTexto = document.createElement('span');
+                    spanTexto.className = 'texto-descricao';
+                    descricao.textContent = '';
+                    descricao.appendChild(spanTexto);
+                    spanTexto.textContent = textoOriginal.substring(0, 150) + '...';
+                    
+                    const btn = document.createElement('button');
+                    btn.className = 'expand-btn';
+                    btn.innerHTML = '<i class="fas fa-chevron-down"></i> Ler mais';
+                    
+                    btn.addEventListener('click', function() {
+                        if (spanTexto.textContent.endsWith('...')) {
+                            spanTexto.textContent = textoOriginal;
+                            this.innerHTML = '<i class="fas fa-chevron-up"></i> Ler menos';
+                        } else {
+                            spanTexto.textContent = textoOriginal.substring(0, 150) + '...';
+                            this.innerHTML = '<i class="fas fa-chevron-down"></i> Ler mais';
+                        }
+                    });
+                    
+                    descricao.parentNode.insertBefore(btn, descricao.nextSibling);
+                }
+            });
+
+            // Efeito hover nos cards
+            document.querySelectorAll('.resposta-card').forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.style.transform = 'translateY(-5px)';
+                    card.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.3)';
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = '';
+                    card.style.boxShadow = '';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

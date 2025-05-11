@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliar Respostas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/avaliar_respostas.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cronometro.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    
+    <!-- Inclui o menu -->
+    {% include 'menu.html' %}
+
+    <!-- Adiciona o cronômetro -->
+    {% include 'cronometro.html' %}
+
+    <!-- Conteúdo da página -->
+    <h1 class="avaliar-respostas-title">Avaliar Respostas</h1>
+
+    <!-- Inclui o JavaScript do cronômetro -->
+    <script src="{{ url_for('static', filename='js/cronometro.js') }}"></script>
+
+    {% if propostas %}
+        <!-- Bloco de Propostas Disponíveis -->
+        <div class="content-block propostas-block">
+            <h2 class="avaliar-respostas-subtitle">Propostas Disponíveis</h2>
+            <ul class="avaliar-respostas-list">
+                {% for proposta in propostas %}
+                    <li>
+                        <strong>{{ proposta.nome }}</strong>
+                        <span>(Pendentes: {{ proposta.pendentes }}, Avaliadas: {{ proposta.avaliadas }})</span>
+                        <a href="{{ url_for('avaliar_respostas', proposta_id=proposta.id) }}">Selecionar</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    {% elif grupos %}
+        <!-- Bloco de Grupos para a Proposta Selecionada -->
+        <div class="content-block grupos-block">
+            <h2 class="avaliar-respostas-subtitle">Grupos para a Proposta Selecionada</h2>
+            <ul class="avaliar-respostas-list">
+                {% for grupo in grupos %}
+                    <li>
+                        <strong>{{ grupo.nome }}</strong>
+                        <span>(Pendentes: {{ grupo.pendentes }}, Avaliadas: {{ grupo.avaliadas }})</span>
+                        <a href="{{ url_for('avaliar_respostas', proposta_id=proposta_id, grupo_id=grupo.id) }}">Selecionar</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            <a href="{{ url_for('avaliar_respostas') }}" class="voltar-btn"><i class="fas fa-arrow-left"></i> Voltar</a>
+        </div>
+
+    {% elif respostas %}
+        <!-- Bloco de Respostas do Grupo Selecionado -->
+        <div class="content-block respostas-block">
+            <h2 class="avaliar-respostas-subtitle">Respostas do Grupo Selecionado</h2>
+            <ul class="avaliar-respostas-list">
+                {% for resposta in respostas %}
+                    <li>
+                        <strong>{{ resposta.titulo }}</strong>
+                        <p>{{ resposta.descricao }}</p>
+                        <a href="{{ url_for('avaliar_respostas', proposta_id=proposta_id, grupo_id=grupo_id, resposta_id=resposta.id) }}">Selecionar</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            <a href="{{ url_for('avaliar_respostas', proposta_id=proposta_id) }}" class="voltar-btn"><i class="fas fa-arrow-left"></i> Voltar</a>
+        </div>
+
+    {% elif resposta %}
+    
+        <!-- Bloco de Detalhes da Resposta -->
+        <div class="content-block detalhes-block">
+            <h2 class="avaliar-respostas-subtitle">Detalhes da Resposta</h2>
+            <h3>
+                {{ resposta.titulo }}
+                <i id="favorito-icon" class="far fa-star" onclick="marcarFavorito({{ resposta.id }})" style="cursor: pointer; margin-left: 10px; color: {% if resposta.is_favor == 1 %}gold{% else %}#ccc{% endif %};"></i>
+            </h3>
+            <p><strong>Descrição:</strong> {{ resposta.descricao }}</p>
+            <p><strong>Link:</strong>
+                {% if resposta.link %}
+                    <a href="{{ resposta.link }}" target="_blank">{{ resposta.link }}</a>
+                {% else %}
+                    Nenhum link fornecido.
+                {% endif %}
+            </p>
+            <p><strong>Proposta:</strong> {{ resposta.proposta_nome }}</p>
+            <p><strong>Grupo:</strong> {{ resposta.grupo_nome }}</p>
+            <p><strong>Categorias Selecionadas:</strong>
+                {% for cat_id in resposta.categorias.split(',') %}
+                    {{ categorias[cat_id|int].categoria }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            <p><strong>Arquivos:</strong></p>
+            <ul>
+                {% if arquivos %}
+                    {% for arquivo in arquivos %}
+                        <li>
+                            <a href="https://{{ S3_BUCKET_NAME }}.s3.amazonaws.com/respostas/proposta_{{ resposta.tarefa_id }}/grupo_{{ resposta.grupo_id }}/resposta_{{ resposta.id }}/{{ arquivo }}" target="_blank">
+                                {{ arquivo }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li>Nenhum arquivo anexado.</li>
+                {% endif %}
+            </ul>
+
+            <form class="avaliar-respostas-form" method="POST">
+                <input type="hidden" name="resposta_id" value="{{ resposta.id }}">
+                
+                <label for="observacao">Observações:</label><br>
+                <textarea name="observacao" id="observacao" rows="4" cols="50"></textarea>
+
+                <fieldset>
+                    <legend>Ação</legend>
+                    <label>
+                        <input type="radio" name="acao" value="aceitar" required>
+                        Aceitar
+                    </label><br>
+                    <label>
+                        <input type="radio" name="acao" value="aceitar_com_alteracoes" required>
+                        Aceitar com Alterações
+                    </label><br>
+                    <label>
+                        <input type="radio" name="acao" value="rejeitar" required>
+                        Rejeitar
+                    </label>
+                </fieldset>
+
+                <div id="categorias-selecao" style="display: none;">
+                    <h4>Selecione a Categoria</h4>
+                    {% for id, categoria in categorias.items() %}
+                        <label>
+                            <input type="radio" name="categorias_novas" value="{{ id }}" 
+                                {% if id|string in resposta.categorias.split(',') %}checked{% endif %}>
+                            {{ categoria.categoria }}
+                        </label><br>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" onclick="return confirmarEnvio()">Enviar</button>
+            </form>
+            <a href="{{ url_for('avaliar_respostas', proposta_id=proposta_id, grupo_id=grupo_id) }}" class="voltar-btn"><i class="fas fa-arrow-left"></i> Voltar</a>
+        </div>
+        
+        <script>
+            const radioButtons = document.querySelectorAll('input[name="acao"]');
+            const categoriasDiv = document.getElementById('categorias-selecao');
+        
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'aceitar_com_alteracoes') {
+                        categoriasDiv.style.display = 'block';
+                    } else {
+                        categoriasDiv.style.display = 'none';
+                    }
+                });
+            });
+        
+            function confirmarEnvio() {
+                return confirm("Você realmente deseja enviar esta avaliação?");
+            }
+        </script>
+
+        <script>
+            function marcarFavorito(respostaId) {
+                fetch(`/marcar_favorito/${respostaId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const favoritoIcon = document.getElementById('favorito-icon');
+                        if (data.is_favor) {
+                            favoritoIcon.classList.remove('far');
+                            favoritoIcon.classList.add('fas');
+                            favoritoIcon.style.color = 'gold';
+                        } else {
+                            favoritoIcon.classList.remove('fas');
+                            favoritoIcon.classList.add('far');
+                            favoritoIcon.style.color = '#ccc';
+                        }
+                    } else {
+                        alert('Erro ao marcar como favorita.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                });
+            }
+        </script>
+        
+    {% else %}
+        <!-- Bloco de Nenhuma Informação Disponível -->
+        <div class="content-block">
+            <p>Nenhuma informação disponível.</p>
+        </div>
+    {% endif %}
+
+</body>
+</html>

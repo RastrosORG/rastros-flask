@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalhes do Grupo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/group_detail.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cronometro.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    
+    <!-- Inclui o menu -->
+    {% include 'menu.html' %}
+
+    <!-- Adiciona o cronômetro -->
+    {% include 'cronometro.html' %}
+
+    <!-- Inclui o JavaScript do cronômetro -->
+    <script src="{{ url_for('static', filename='js/cronometro.js') }}"></script>
+
+    <!-- Banner com imagem de fundo -->
+    <div class="banner"></div>
+
+    <div class="group-detail-container">
+        <!-- Título do Grupo e Ícones -->
+        <div class="group-header">
+            <h1 class="tracking-in-expand">{{ group['name'] }}</h1>
+            <div class="header-icons">
+                <!-- Ícone de pontuação -->
+                <div class="pontuacao-icon" onclick="window.location.href='{{ url_for('pontuacao') }}'">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <!-- Ícone de adicionar membros (visível apenas para o líder) -->
+                {% if current_user_status == 'Líder' %}
+                    <div class="add-members-icon" onclick="openModal()">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                {% endif %}
+                <!-- Ícone de engrenagem -->
+                <div class="gear-icon" onclick="toggleOptions()">
+                    <i class="fas fa-gear"></i>
+                    <div class="options-menu" id="optionsMenu">
+                        {% if current_user_status == 'Líder' %}
+                            <form method="POST" action="{{ url_for('delete_group', group_id=group['id']) }}" onsubmit="return confirm('Tem certeza que deseja excluir a equipe? Isso removerá todos os membros.');">
+                                <button type="submit">Excluir equipe</button>
+                            </form>
+                        {% else %}
+                            <form method="POST" action="{{ url_for('leave_group', group_id=group['id']) }}" onsubmit="return confirm('Tem certeza que deseja deixar a equipe?');">
+                                <button type="submit">Deixar equipe</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Adicionar membros modal -->
+        <div id="addMembersModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+                <h2>Adicionar Membros</h2>
+                <form id="addMembersForm">
+                    <div class="user-list">
+                        {% for user in available_users %}
+                            <div class="user-row">
+                                <input type="checkbox" id="user_{{ user['id'] }}" name="members" value="{{ user['id'] }}">
+                                <label for="user_{{ user['id'] }}">{{ user['username'] }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="button" onclick="submitMembers()" class="confirm-button">Confirmar</button>
+                        <button type="button" onclick="closeModal()" class="cancel-button">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Membros e Convites Pendentes em uma grade -->
+        <div class="group-content">
+            <!-- Lista de Membros -->
+            <div class="members-section">
+                <h2>Membros</h2>
+                <div class="member-list">
+                    {% if members %}
+                        {% for member in members %}
+                            <div class="member-row">
+                                <div class="member-name">{{ member['username'] }}</div>
+                                <div class="member-status">{{ member['status'] }}</div>
+                                <div class="member-actions">
+                                    {% if current_user_status == 'Líder' and member['status'] != 'Líder' %}
+                                        <form method="POST" action="{{ url_for('kick_member', group_id=group['id'], user_id=member['id']) }}" onsubmit="return confirm('Tem certeza que deseja expulsar {{ member['username'] }} da equipe?');">
+                                            <button type="submit" class="leader-action"><i class="fas fa-user-minus"></i></button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="member-row">
+                            <div class="member-name">Sem membros</div>
+                            <div class="member-status"></div>
+                            <div class="member-actions"></div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Lista de Convites Pendentes -->
+            <div class="invitations-section">
+                <h2>Convites Pendentes</h2>
+                <div class="invitation-list">
+                    {% if pending_invitations %}
+                        {% for invitation in pending_invitations | sort(attribute='username') %}
+                            <div class="invitation-row">
+                                <div class="invitation-name">{{ invitation['username'] }}</div>
+                                <div class="invitation-status">{{ invitation['status'] }}</div>
+                                <div class="invitation-actions">
+                                    {% if current_user_status == 'Líder' and invitation['status'] == 'Solicitando' %}
+                                        <form method="POST" action="{{ url_for('add_member_request', group_id=group['id'], user_id=invitation['id']) }}">
+                                            <button type="submit" class="leader-action"><i class="fas fa-check"></i></button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('recusar_member_request', group_id=group['id'], user_id=invitation['id']) }}">
+                                            <button type="submit" class="leader-action"><i class="fas fa-times"></i></button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="invitation-row">
+                            <div class="invitation-name">Sem Solicitações</div>
+                            <div class="invitation-status"></div>
+                            <div class="invitation-actions"></div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <a href="{{ url_for('groups') }}" class="back-link">Voltar aos Grupos</a>
+    </div>
+
+    <!-- Função JavaScript para alternar o menu de opções -->
+    <script>
+        function toggleOptions() {
+            const optionsMenu = document.getElementById('optionsMenu');
+            optionsMenu.style.display = optionsMenu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Fechar o menu ao clicar fora dele
+        window.onclick = function(event) {
+            if (!event.target.matches('.gear-icon') && !event.target.matches('.fa-gear')) {
+                const optionsMenu = document.getElementById('optionsMenu');
+                if (optionsMenu.style.display === 'block') {
+                    optionsMenu.style.display = 'none';
+                }
+            }
+        };
+
+        // Funções para abrir e fechar o modal
+        function openModal() {
+            document.getElementById('addMembersModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('addMembersModal').style.display = 'none';
+        }
+
+        // Função para enviar os membros selecionados
+        function submitMembers() {
+            const checkboxes = document.querySelectorAll('input[name="members"]:checked');
+            const selectedMembers = Array.from(checkboxes).map(checkbox => checkbox.value);
+        
+            fetch(`/groups/{{ group['id'] }}/add_members`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ members: selectedMembers }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro na resposta do servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    closeModal();
+                    location.reload();
+                } else {
+                    alert(data.error || 'Erro ao adicionar membros');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao enviar convites: ' + error.message);
+            });
+        }
+    </script>
+</body>
+</html>
