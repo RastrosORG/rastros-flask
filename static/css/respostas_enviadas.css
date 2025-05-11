@@ -1,0 +1,169 @@
+/* respostas_enviadas.css */
+
+/* Estilo geral para o conteúdo */
+.content {
+    color: #ffffff;
+    font-family: 'Anonymous_Pro', sans-serif;
+    text-align: center;
+    padding: 20px;
+    margin-top: 50px;
+}
+
+/* Banner com imagem de fundo */
+.banner {
+    position: fixed;
+    top: 0;
+    left: 25px;
+    width: calc(100% - 25px);
+    height: 60vh;
+    background-image: url('../imagens/inicio.png');
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+}
+
+/* Estilo para o título principal */
+.content h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #f1f1f1;
+    margin-bottom: 40px;
+}
+
+/* Efeito de linha neon abaixo do título */
+.content h1::after {
+    content: '';
+    display: block;
+    width: 100px;
+    height: 2px;
+    background-color: #f5db46;
+    margin: 10px auto 0;
+    box-shadow: 0 0 5px #f5db46, 0 0 10px #f5db46;
+}
+
+/* Container para a lista de respostas */
+.respostas-lista {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Estilo para cada item da lista de respostas */
+.resposta-item {
+    background-color: #1d1e20;
+    border: 5px solid transparent;
+    border-radius: 0;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+    animation: flip-in-hor-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+    border-image-source: linear-gradient(to right, orange, #ffee00);
+    border-image-slice: 1;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.resposta-item:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Estilo para os títulos das respostas */
+.resposta-item h3 {
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+}
+
+/* Estilo para o texto descritivo */
+.resposta-item p {
+    color: #e1dedc !important;
+    margin: 5px 0;
+}
+
+/* Estilo para a lista de arquivos */
+.arquivos {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+}
+
+.arquivos li {
+    margin: 5px 0;
+}
+
+.arquivos a {
+    color: #ffee00;
+    text-decoration: none;
+}
+
+.arquivos a:hover {
+    text-decoration: underline;
+}
+
+/* Estilo para o texto "Sem anexos" */
+.arquivos li:not(:has(a)) {
+    color: #e1dedc; /* Cor do texto */
+    cursor: default; /* Cursor padrão (não clicável) */
+    pointer-events: none; /* Desativa eventos de clique */
+}
+
+/* Estilo para os botões */
+.botoes {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.btn-voltar {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #1d1e20;
+    border: 2px solid #ffee00;
+    color: #ffee00;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 0 10px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.btn-voltar:hover {
+    background-color: #ffee00;
+    color: #1d1e20;
+}
+
+/* Animação flip-in-hor-top */
+@keyframes flip-in-hor-top {
+    0% {
+        transform: rotateX(-80deg);
+        opacity: 0;
+    }
+    100% {
+        transform: rotateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .content h1 {
+        font-size: 2rem;
+    }
+
+    .respostas-lista {
+        padding: 10px;
+    }
+
+    .resposta-item {
+        padding: 15px;
+    }
+
+    .btn-voltar {
+        margin: 5px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+}

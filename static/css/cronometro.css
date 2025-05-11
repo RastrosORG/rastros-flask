@@ -1,0 +1,23 @@
+/* cronometro.css */
+#cronometro-container {
+    position: fixed;
+    top: 0;
+    left: 80px;
+    right: 50px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px;
+    text-align: center;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+#cronometro {
+    font-size: 24px;
+    font-family: 'Digital-7', monospace;
+}
+
+@font-face {
+    font-family: 'Digital-7';
+    src: url('digital-7.ttf') format('truetype');
+}

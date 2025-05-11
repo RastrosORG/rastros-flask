@@ -1,0 +1,336 @@
+/* tarefas.css - Versão Final */
+
+/* Reset de estilos conflitantes */
+body.tarefas-page {
+    height: auto;
+    min-height: 100vh;
+    display: block;
+    padding-top: 60px;
+    background-color: #1d1e20;
+    background-image: url('../imagens/tarefas.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: #ffffff;
+    font-family: 'Anonymous Pro', sans-serif;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+/* Container Principal */
+.tarefas-container {
+    max-width: 1400px;
+    width: 95%;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Configuração do Cronômetro */
+#config-cronometro {
+    background-color: rgba(21, 21, 27, 0.95);
+    padding: 20px;
+    border-radius: 10px;
+    margin: 0 auto 30px;
+    max-width: 700px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    border: 1px solid #333;
+}
+
+#config-cronometro h2 {
+    color: #f5db46;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.time-inputs {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-group label {
+    font-size: 1rem;
+    color: #fff;
+}
+
+.input-group input {
+    width: 70px;
+    padding: 8px 12px;
+    border: 1px solid #444;
+    border-radius: 5px;
+    background-color: #2a2b30;
+    color: #fff;
+    font-size: 1rem;
+    text-align: center;
+}
+
+/* Cabeçalho */
+.tarefas-header {
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    color: #f1f1f1;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.title-divider {
+    width: 150px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #f5db46, transparent);
+    margin: 0 auto;
+    border-radius: 3px;
+}
+
+/* Área de Conteúdo */
+.tarefas-content {
+    width: 100%;
+    margin-top: 20px;
+    padding-bottom: 50px;
+}
+
+/* Grid de Propostas */
+.propostas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+    padding: 10px;
+}
+
+/* Cards de Proposta */
+.proposta-card {
+    background-color: rgba(29, 30, 32, 0.95);
+    border-radius: 8px;
+    border-left: 5px solid #ffee00;
+    padding: 25px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.proposta-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.proposta-header h3 {
+    color: #fff;
+    margin: 0 0 15px 0;
+    font-size: 1.5rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+}
+
+.proposta-body {
+    flex-grow: 1;
+    margin-bottom: 20px;
+}
+
+.proposta-body p {
+    color: #e1dedc;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.proposta-arquivos h4 {
+    color: #f5db46;
+    margin: 20px 0 10px 0;
+    font-size: 1.1rem;
+}
+
+.proposta-arquivos ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.proposta-arquivos li {
+    margin-bottom: 8px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.proposta-arquivos li::before {
+    content: "→";
+    color: #ffee00;
+    position: absolute;
+    left: 0;
+}
+
+.proposta-arquivos a {
+    color: #ffee00;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.proposta-arquivos a:hover {
+    color: #ffcc00;
+    text-decoration: underline;
+}
+
+.proposta-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.btn-primary, .btn-success, .btn-danger {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background-color: #f5db46;
+    color: #1d1e20;
+}
+
+.btn-success {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #f44336;
+    color: white;
+}
+
+.task-accepted {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.proposta-participantes {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed #444;
+}
+
+.proposta-participantes h4 {
+    color: #f5db46;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.proposta-participantes ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.proposta-participantes li {
+    margin-bottom: 5px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.proposta-participantes li::before {
+    content: "•";
+    color: #ffee00;
+    position: absolute;
+    left: 5px;
+}
+
+/* Estado Vazio */
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    background-color: rgba(29, 30, 32, 0.7);
+    border-radius: 10px;
+    margin-top: 30px;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: #f5db46;
+    margin-bottom: 20px;
+}
+
+.empty-state p {
+    color: #e1dedc;
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+/* Barra de Rolagem */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1d1e20;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #f5db46;
+    border-radius: 10px;
+}
+
+/* Responsividade */
+@media (max-width: 992px) {
+    .propostas-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .tarefas-container {
+        width: 100%;
+        padding: 15px;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .time-inputs {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+    }
+    
+    .proposta-card {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 1.8rem;
+    }
+    
+    .propostas-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .proposta-header h3 {
+        font-size: 1.3rem;
+    }
+}
