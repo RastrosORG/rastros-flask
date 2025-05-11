@@ -20,7 +20,7 @@ load_dotenv()
 # Configuração do AWS S3
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')  # Chave de acesso da AWS
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')  # Chave secreta da AWS
-AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')  # Região do bucket (padrão: us-east-1)
+AWS_REGION = os.getenv('AWS_REGION', 'us-east-2')  # Região do bucket (padrão: us-east-1)
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')  # Nome do seu bucket S3
 
 # Configuração do cliente S3
