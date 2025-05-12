@@ -2128,6 +2128,7 @@ def recusar_member_request(group_id, user_id):
     return redirect(url_for('group_detail', group_id=group_id))
 
 @app.route('/avaliar_respostas', methods=['GET', 'POST'])
+@csrf_exempt
 def avaliar_respostas():
     conn = None
     cursor = None
