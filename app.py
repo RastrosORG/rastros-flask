@@ -10,11 +10,9 @@ from datetime import datetime
 from psycopg2 import extras, pool
 import psycopg2.extras
 import boto3
-from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
-csrf = CSRFProtect(app)
 
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -32,7 +30,7 @@ AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-2')
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 
-# Configuração do cliente S3
+# Configuração do cliente S3 apenas se todas as variáveis estiverem presentes
 s3_client = None
 if all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET_NAME]):
     try:
