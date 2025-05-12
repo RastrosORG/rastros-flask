@@ -10,9 +10,11 @@ from datetime import datetime
 from psycopg2 import extras, pool
 import psycopg2.extras
 import boto3
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
+csrf = CSRFProtect(app)
 
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -31,12 +33,20 @@ AWS_REGION = os.getenv('AWS_REGION', 'us-east-2')
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 
 # Configuração do cliente S3
-s3_client = boto3.client(
-    's3',
-    aws_access_key_id=AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=AWS_REGION
-) if all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET_NAME]) else None
+s3_client = None
+if all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET_NAME]):
+    try:
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            region_name=AWS_REGION
+        )
+        # Testa a conexão
+        s3_client.head_bucket(Bucket=S3_BUCKET_NAME)
+    except Exception as e:
+        app.logger.error(f"Erro ao configurar cliente S3: {e}")
+        s3_client = None
 
 if not s3_client:
     app.logger.warning("Configuração do S3 incompleta - funcionalidades de upload serão limitadas")
@@ -74,18 +84,26 @@ def allowed_file(filename):
 def upload_file_to_s3(file, bucket_name, s3_path):
     """Faz upload de um arquivo para o S3"""
     if not s3_client:
-        app.logger.error("Tentativa de upload sem cliente S3 configurado")
+        app.logger.error("Cliente S3 não configurado")
         return False
         
     try:
+        extra_args = {
+            'ContentType': file.content_type
+        }
+        
+        # Verifica se o bucket suporta ACLs
+        try:
+            s3_client.put_object_acl(Bucket=bucket_name, Key=s3_path, ACL='public-read')
+            extra_args['ACL'] = 'public-read'
+        except Exception as acl_error:
+            app.logger.warning(f"Bucket não suporta ACLs, continuando sem ACL: {acl_error}")
+
         s3_client.upload_fileobj(
             file,
             bucket_name,
             s3_path,
-            ExtraArgs={
-                'ACL': 'public-read',
-                'ContentType': file.content_type
-            }
+            ExtraArgs=extra_args
         )
         return True
     except Exception as e:
