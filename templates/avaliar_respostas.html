@@ -72,7 +72,6 @@
         </div>
 
     {% elif resposta %}
-    
         <!-- Bloco de Detalhes da Resposta -->
         <div class="content-block detalhes-block">
             <h2 class="avaliar-respostas-subtitle">Detalhes da Resposta</h2>
@@ -80,27 +79,41 @@
                 {{ resposta.titulo }}
                 <i id="favorito-icon" class="far fa-star" onclick="marcarFavorito({{ resposta.id }})" style="cursor: pointer; margin-left: 10px; color: {% if resposta.is_favor == 1 %}gold{% else %}#ccc{% endif %};"></i>
             </h3>
+            
             <p><strong>Descrição:</strong> {{ resposta.descricao }}</p>
+            
             <p><strong>Link:</strong>
                 {% if resposta.link %}
-                    <a href="{{ resposta.link }}" target="_blank">{{ resposta.link }}</a>
+                    <a href="{{ resposta.link }}" target="_blank" rel="noopener noreferrer">{{ resposta.link }}</a>
                 {% else %}
                     Nenhum link fornecido.
                 {% endif %}
             </p>
-            <p><strong>Proposta:</strong> {{ resposta.proposta_nome }}</p>
-            <p><strong>Grupo:</strong> {{ resposta.grupo_nome }}</p>
+            
+            <p><strong>Proposta:</strong> {{ resposta.proposta_nome or 'Não disponível' }}</p>
+            <p><strong>Grupo:</strong> {{ resposta.grupo_nome or 'Não disponível' }}</p>
+            
             <p><strong>Categorias Selecionadas:</strong>
-                {% for cat_id in resposta.categorias.split(',') %}
-                    {{ categorias[cat_id|int].categoria }}{% if not loop.last %}, {% endif %}
-                {% endfor %}
+                {% if resposta.categorias and resposta.categorias.strip() %}
+                    {% for cat_id in resposta.categorias.split(',') if cat_id.strip() %}
+                        {% set categoria = categorias.get(cat_id|int, {}) %}
+                        {% if categoria %}
+                            {{ categoria.categoria }}{% if not loop.last %}, {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    Nenhuma categoria selecionada
+                {% endif %}
             </p>
+            
             <p><strong>Arquivos:</strong></p>
             <ul>
                 {% if arquivos %}
-                    {% for arquivo in arquivos %}
+                    {% for arquivo in arquivos if arquivo %}
                         <li>
-                            <a href="https://{{ S3_BUCKET_NAME }}.s3.amazonaws.com/respostas/proposta_{{ resposta.tarefa_id }}/grupo_{{ resposta.grupo_id }}/resposta_{{ resposta.id }}/{{ arquivo }}" target="_blank">
+                            <a href="https://{{ S3_BUCKET_NAME }}.s3.amazonaws.com/respostas/proposta_{{ resposta.tarefa_id }}/grupo_{{ resposta.grupo_id }}/resposta_{{ resposta.id }}/{{ arquivo }}" 
+                               target="_blank" 
+                               rel="noopener noreferrer">
                                 {{ arquivo }}
                             </a>
                         </li>
@@ -112,22 +125,23 @@
 
             <form class="avaliar-respostas-form" method="POST">
                 <input type="hidden" name="resposta_id" value="{{ resposta.id }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <label for="observacao">Observações:</label><br>
-                <textarea name="observacao" id="observacao" rows="4" cols="50"></textarea>
+                <textarea name="observacao" id="observacao" rows="4" cols="50">{{ resposta.observacao or '' }}</textarea>
 
                 <fieldset>
                     <legend>Ação</legend>
                     <label>
-                        <input type="radio" name="acao" value="aceitar" required>
+                        <input type="radio" name="acao" value="aceitar" required {% if resposta.is_avaliada and not resposta.is_reject and not resposta.is_modify %}checked{% endif %}>
                         Aceitar
                     </label><br>
                     <label>
-                        <input type="radio" name="acao" value="aceitar_com_alteracoes" required>
+                        <input type="radio" name="acao" value="aceitar_com_alteracoes" required {% if resposta.is_modify %}checked{% endif %}>
                         Aceitar com Alterações
                     </label><br>
                     <label>
-                        <input type="radio" name="acao" value="rejeitar" required>
+                        <input type="radio" name="acao" value="rejeitar" required {% if resposta.is_reject %}checked{% endif %}>
                         Rejeitar
                     </label>
                 </fieldset>
@@ -137,7 +151,7 @@
                     {% for id, categoria in categorias.items() %}
                         <label>
                             <input type="radio" name="categorias_novas" value="{{ id }}" 
-                                {% if id|string in resposta.categorias.split(',') %}checked{% endif %}>
+                                {% if id|string in (resposta.categorias or '').split(',') %}checked{% endif %}>
                             {{ categoria.categoria }}
                         </label><br>
                     {% endfor %}
@@ -152,15 +166,18 @@
             const radioButtons = document.querySelectorAll('input[name="acao"]');
             const categoriasDiv = document.getElementById('categorias-selecao');
         
+            // Mostrar seção de categorias se "Aceitar com Alterações" estiver selecionado
+            function atualizarVisibilidadeCategorias() {
+                const aceitarComAlteracoes = document.querySelector('input[name="acao"][value="aceitar_com_alteracoes"]');
+                categoriasDiv.style.display = aceitarComAlteracoes.checked ? 'block' : 'none';
+            }
+            
             radioButtons.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    if (this.value === 'aceitar_com_alteracoes') {
-                        categoriasDiv.style.display = 'block';
-                    } else {
-                        categoriasDiv.style.display = 'none';
-                    }
-                });
+                radio.addEventListener('change', atualizarVisibilidadeCategorias);
             });
+            
+            // Inicializar visibilidade
+            atualizarVisibilidadeCategorias();
         
             function confirmarEnvio() {
                 return confirm("Você realmente deseja enviar esta avaliação?");
@@ -173,27 +190,31 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
                     },
+                    body: JSON.stringify({
+                        resposta_id: respostaId
+                    })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na rede');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         const favoritoIcon = document.getElementById('favorito-icon');
-                        if (data.is_favor) {
-                            favoritoIcon.classList.remove('far');
-                            favoritoIcon.classList.add('fas');
-                            favoritoIcon.style.color = 'gold';
-                        } else {
-                            favoritoIcon.classList.remove('fas');
-                            favoritoIcon.classList.add('far');
-                            favoritoIcon.style.color = '#ccc';
-                        }
+                        favoritoIcon.classList.toggle('far');
+                        favoritoIcon.classList.toggle('fas');
+                        favoritoIcon.style.color = data.is_favor ? 'gold' : '#ccc';
                     } else {
-                        alert('Erro ao marcar como favorita.');
+                        alert(data.message || 'Erro ao marcar como favorita');
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
+                    alert('Erro na comunicação com o servidor');
                 });
             }
         </script>
