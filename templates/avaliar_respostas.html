@@ -126,7 +126,6 @@
 
             <form class="avaliar-respostas-form" method="POST">
                 <input type="hidden" name="resposta_id" value="{{ resposta.id }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <label for="observacao">Observações:</label><br>
                 <textarea name="observacao" id="observacao" rows="4" cols="50">{{ resposta.observacao or '' }}</textarea>
@@ -190,8 +189,7 @@
                 fetch(`/marcar_favorito/${respostaId}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token() }}'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         resposta_id: respostaId
