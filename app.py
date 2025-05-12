@@ -2463,7 +2463,10 @@ def pontuacao_avaliador():
         # Debug opcional (remova em produção)
         app.logger.debug(f"Propostas encontradas: {propostas}")
 
-        return render_template('pontuacao_avaliador.html', propostas=propostas)
+        return render_template('pontuacao_avaliador.html', 
+               propostas=propostas,
+               S3_BUCKET_NAME=os.getenv('S3_BUCKET_NAME')
+               )
 
     except Exception as e:
         app.logger.error(f"Erro em pontuacao_avaliador: {e}")
