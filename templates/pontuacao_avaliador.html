@@ -187,10 +187,12 @@
             document.getElementById('respostaPontuacao').textContent = resposta.pontuacao || "0";
             
             const arquivosLista = document.getElementById('respostaArquivos');
+            const s3BucketName = '{{ S3_BUCKET_NAME }}';  // Acessa a variável do template
+            
             arquivosLista.innerHTML = resposta.arquivos_completos && resposta.arquivos_completos.length ? 
                 resposta.arquivos_completos.map(arquivo => `
                     <li>
-                        <a href="https://${S3_BUCKET_NAME}.s3.amazonaws.com/${arquivo}" target="_blank">
+                        <a href="https://${s3BucketName}.s3.amazonaws.com/${arquivo}" target="_blank">
                             ${arquivo.split('/').pop()}
                         </a>
                     </li>
