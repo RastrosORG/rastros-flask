@@ -2434,47 +2434,41 @@ def pontuacao():
         if conn:
             conn.close()
 
-@app.route('/get_respostas_avaliadas/<int:proposta_id>/<int:grupo_id>')
-def get_respostas_avaliadas(proposta_id, grupo_id):
+@app.route('/pontuacao_avaliador')
+def pontuacao_avaliador():
+    # Verificação de autenticação
+    if 'user_id' not in session:
+        flash('Por favor, faça login para acessar esta página.', 'error')
+        return redirect(url_for('index'))
+
     conn = None
     cursor = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        user_id = session['user_id']
+
+        # Verifica se o usuário é avaliador (usando 1/0 para booleanos)
+        cursor.execute('SELECT is_evaluator FROM users WHERE id = %s', (user_id,))
+        user_data = cursor.fetchone()
         
-        cursor.execute('''
-            SELECT r.*, g.name AS grupo_nome
-            FROM respostas r
-            JOIN groups g ON r.grupo_id = g.id
-            WHERE r.tarefa_id = %s AND r.grupo_id = %s AND r.is_avaliada = 1
-        ''', (proposta_id, grupo_id))
-        
-        respostas = []
-        for resposta in cursor.fetchall():
-            resposta_dict = dict(resposta)
-            
-            # Gera os caminhos completos dos arquivos no S3
-            arquivos = []
-            prefix = f"respostas/proposta_{proposta_id}/grupo_{grupo_id}/resposta_{resposta['id']}/"
-            
-            if s3_client:
-                try:
-                    objects = s3_client.list_objects_v2(
-                        Bucket=S3_BUCKET_NAME,
-                        Prefix=prefix
-                    )
-                    arquivos = [obj['Key'] for obj in objects.get('Contents', [])]
-                except Exception as e:
-                    app.logger.error(f"Erro ao listar arquivos no S3: {e}")
-            
-            resposta_dict['arquivos_completos'] = arquivos
-            respostas.append(resposta_dict)
-        
-        return jsonify(respostas)
-        
+        if not user_data or user_data['is_evaluator'] == 0:
+            flash('Acesso restrito a avaliadores.', 'error')
+            return redirect(url_for('index'))
+
+        # Busca todas as propostas (tarefas)
+        cursor.execute('SELECT id, nome, descricao FROM propostas')
+        propostas = cursor.fetchall()
+
+        # Debug opcional (remova em produção)
+        app.logger.debug(f"Propostas encontradas: {propostas}")
+
+        return render_template('pontuacao_avaliador.html', propostas=propostas)
+
     except Exception as e:
-        app.logger.error(f"Erro em get_respostas_avaliadas: {e}")
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Erro em pontuacao_avaliador: {e}")
+        flash('Ocorreu um erro ao carregar as propostas.', 'error')
+        return redirect(url_for('index'))
     finally:
         if cursor:
             cursor.close()
@@ -2523,6 +2517,7 @@ def get_grupos_por_proposta(proposta_id):
         if conn:
             conn.close()
 
+# ROTA AUXILIAR DE PONTUACAO_AVALIADOR
 @app.route('/get_respostas_avaliadas/<int:proposta_id>/<int:grupo_id>')
 def get_respostas_avaliadas(proposta_id, grupo_id):
     conn = None
@@ -2534,7 +2529,7 @@ def get_respostas_avaliadas(proposta_id, grupo_id):
         # Busca as respostas avaliadas (mantendo 1 para booleanos)
         cursor.execute('''
             SELECT r.id, r.titulo, r.descricao, r.categorias, r.arquivos, 
-                   r.observacao, r.pontuacao, g.name AS grupo_nome
+                   r.observacao, r.pontuacao, g.name AS grupo_nome, r.tarefa_id, r.grupo_id
             FROM respostas r
             JOIN groups g ON r.grupo_id = g.id
             WHERE r.tarefa_id = %s AND r.grupo_id = %s AND r.is_avaliada = 1
@@ -2561,13 +2556,21 @@ def get_respostas_avaliadas(proposta_id, grupo_id):
                 except (ValueError, AttributeError) as e:
                     app.logger.warning(f"Erro ao processar categorias: {e}")
 
-            # Processar arquivos
+            # Processar arquivos - agora vamos buscar diretamente do S3
             arquivos = []
-            if resposta_dict['arquivos']:
+            arquivos_completos = []
+            
+            if s3_client and S3_BUCKET_NAME:
                 try:
-                    arquivos = [arq.strip() for arq in resposta_dict['arquivos'].split(',') if arq.strip()]
-                except AttributeError as e:
-                    app.logger.warning(f"Erro ao processar arquivos: {e}")
+                    prefix = f"respostas/proposta_{resposta_dict['tarefa_id']}/grupo_{resposta_dict['grupo_id']}/resposta_{resposta_dict['id']}/"
+                    response = s3_client.list_objects_v2(
+                        Bucket=S3_BUCKET_NAME,
+                        Prefix=prefix
+                    )
+                    arquivos_completos = [obj['Key'] for obj in response.get('Contents', [])]
+                    arquivos = [arq.split('/')[-1] for arq in arquivos_completos]
+                except Exception as e:
+                    app.logger.error(f"Erro ao listar arquivos no S3: {e}")
 
             # Montar resposta completa
             resposta_completa = {
@@ -2576,10 +2579,7 @@ def get_respostas_avaliadas(proposta_id, grupo_id):
                 'descricao': resposta_dict['descricao'],
                 'categorias': categorias_resposta,
                 'arquivos': arquivos,
-                'arquivos_completos': [
-                    f"arquivos/proposta/proposta_{proposta_id}/grupo_{grupo_id}/resposta_{resposta_dict['id']}/{arquivo}"
-                    for arquivo in arquivos
-                ],
+                'arquivos_completos': arquivos_completos,
                 'observacao': resposta_dict['observacao'],
                 'pontuacao': resposta_dict['pontuacao'],
                 'grupo_nome': resposta_dict['grupo_nome']
