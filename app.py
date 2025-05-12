@@ -2730,7 +2730,7 @@ def favoritos():
                 resposta_dict['arquivos'] = [arq.strip() for arq in str(arquivos).split(',') if arq.strip()]
             
             # Adiciona caminho base para os arquivos
-            resposta_dict['caminho_base'] = f"proposta/proposta_{resposta_dict['proposta_id']}/grupo_{resposta_dict['grupo_id']}/resposta_{resposta_dict['id']}"
+            resposta_dict['caminho_base'] = f"respostas/proposta_{resposta_dict['proposta_id']}/grupo_{resposta_dict['grupo_id']}/resposta_{resposta_dict['id']}"
             
             respostas_processadas.append(resposta_dict)
         
