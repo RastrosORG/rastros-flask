@@ -614,6 +614,7 @@ def excluir_tarefa(tarefa_id):
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+        # Verifica se a tarefa existe
         cursor.execute('SELECT * FROM propostas WHERE id = %s', (tarefa_id,))
         tarefa = cursor.fetchone()
 
@@ -621,43 +622,42 @@ def excluir_tarefa(tarefa_id):
             flash('Tarefa não encontrada')
             return redirect(url_for('tarefas'))
 
-        # Remover arquivos relacionados à tarefa no S3
-        try:
-            # Lista todos os objetos no prefixo da proposta
-            response = s3_client.list_objects_v2(
-                Bucket=S3_BUCKET_NAME,
-                Prefix=f"propostas/proposta_{tarefa_id}/"
-            )
-            
-            if 'Contents' in response:
-                for obj in response['Contents']:
-                    s3_client.delete_object(Bucket=S3_BUCKET_NAME, Key=obj['Key'])
+        # 1. Primeiro remove todos os arquivos relacionados (proposta e respostas)
+        if s3_client and S3_BUCKET_NAME:
+            try:
+                # Remove arquivos da proposta
+                proposta_prefix = f"propostas/proposta_{tarefa_id}/"
+                delete_s3_prefix(proposta_prefix)
+                
+                # Remove arquivos de todas as respostas
+                cursor.execute('SELECT id, grupo_id FROM respostas WHERE tarefa_id = %s', (tarefa_id,))
+                respostas = cursor.fetchall()
+                
+                for resposta in respostas:
+                    resposta_prefix = f"respostas/proposta_{tarefa_id}/grupo_{resposta['grupo_id']}/resposta_{resposta['id']}/"
+                    delete_s3_prefix(resposta_prefix)
                     
-            # Também remove respostas relacionadas
-            response = s3_client.list_objects_v2(
-                Bucket=S3_BUCKET_NAME,
-                Prefix=f"respostas/proposta_{tarefa_id}/"
-            )
-            
-            if 'Contents' in response:
-                for obj in response['Contents']:
-                    s3_client.delete_object(Bucket=S3_BUCKET_NAME, Key=obj['Key'])
-        except Exception as e:
-            app.logger.error(f"Erro ao excluir arquivos do S3: {e}")
-            flash('Erro ao excluir arquivos da tarefa')
+            except Exception as e:
+                app.logger.error(f"Erro ao excluir arquivos do S3: {e}")
+                flash('Erro ao excluir arquivos da tarefa')
+                return redirect(url_for('tarefas'))
 
-        try:
-            cursor.execute('DELETE FROM tarefa_equipes WHERE tarefa_id = %s', (tarefa_id,))
-            cursor.execute('DELETE FROM propostas WHERE id = %s', (tarefa_id,))
-            conn.commit()
-            flash('Tarefa e registros associados excluídos com sucesso!')
-        except Exception as e:
-            conn.rollback()
-            app.logger.error(f"Erro ao excluir tarefa: {e}")
-            flash('Erro ao excluir tarefa do banco de dados')
+        # 2. Remove todas as respostas da tarefa
+        cursor.execute('DELETE FROM respostas WHERE tarefa_id = %s', (tarefa_id,))
+        
+        # 3. Remove as associações de grupos com a tarefa
+        cursor.execute('DELETE FROM tarefa_equipes WHERE tarefa_id = %s', (tarefa_id,))
+        
+        # 4. Remove a proposta/tarefa
+        cursor.execute('DELETE FROM propostas WHERE id = %s', (tarefa_id,))
+        
+        conn.commit()
+        flash('Tarefa e todos os dados relacionados foram excluídos com sucesso!')
 
     except Exception as e:
-        app.logger.error(f"Erro geral na exclusão: {e}")
+        if conn:
+            conn.rollback()
+        app.logger.error(f"Erro ao excluir tarefa {tarefa_id}: {e}")
         flash('Ocorreu um erro durante a exclusão')
     finally:
         if cursor:
@@ -666,6 +666,34 @@ def excluir_tarefa(tarefa_id):
             conn.close()
 
     return redirect(url_for('tarefas'))
+
+def delete_s3_prefix(prefix):
+    """Deleta todos objetos com um prefixo específico no S3"""
+    if not s3_client or not S3_BUCKET_NAME:
+        return False
+        
+    try:
+        objects_to_delete = []
+        paginator = s3_client.get_paginator('list_objects_v2')
+        
+        # Lista todos os objetos com o prefixo
+        for page in paginator.paginate(Bucket=S3_BUCKET_NAME, Prefix=prefix):
+            if 'Contents' in page:
+                objects_to_delete.extend([{'Key': obj['Key']} for obj in page['Contents']])
+        
+        # Deleta em lotes de 1000 (limite da API S3)
+        for i in range(0, len(objects_to_delete), 1000):
+            s3_client.delete_objects(
+                Bucket=S3_BUCKET_NAME,
+                Delete={'Objects': objects_to_delete[i:i+1000]}
+            )
+        
+        app.logger.info(f"Removidos {len(objects_to_delete)} objetos com prefixo {prefix}")
+        return True
+        
+    except Exception as e:
+        app.logger.error(f"Erro ao deletar prefixo {prefix} no S3: {e}")
+        return False
 
 @app.route('/aceitar_tarefa/<int:tarefa_id>')
 def aceitar_tarefa(tarefa_id):
@@ -1460,19 +1488,32 @@ def delete_group(group_id):
             cursor.execute('SELECT id, tarefa_id FROM respostas WHERE grupo_id = %s', (group_id,))
             respostas = cursor.fetchall()
             
-            # Remove os arquivos físicos das respostas
-            for resposta in respostas:
-                resposta_path = os.path.join(
-                    app.config['UPLOAD_FOLDER'],
-                    f'proposta_{resposta["tarefa_id"]}',
-                    f'grupo_{group_id}',
-                    f'resposta_{resposta["id"]}'
-                )
-                if os.path.exists(resposta_path):
+            # Remove os arquivos físicos das respostas no S3
+            if s3_client and S3_BUCKET_NAME:
+                for resposta in respostas:
                     try:
-                        shutil.rmtree(resposta_path)
-                    except OSError as e:
-                        app.logger.error(f"Erro ao remover arquivos da resposta {resposta['id']}: {e}")
+                        prefix = f"respostas/proposta_{resposta['tarefa_id']}/grupo_{group_id}/resposta_{resposta['id']}/"
+                        
+                        # Lista todos os objetos na pasta da resposta
+                        objects_to_delete = []
+                        list_objects = s3_client.list_objects_v2(
+                            Bucket=S3_BUCKET_NAME,
+                            Prefix=prefix
+                        )
+                        
+                        if 'Contents' in list_objects:
+                            objects_to_delete = [{'Key': obj['Key']} for obj in list_objects['Contents']]
+                        
+                        # Remove todos os objetos da pasta da resposta
+                        if objects_to_delete:
+                            app.logger.info(f"Removendo {len(objects_to_delete)} arquivos do S3 para resposta {resposta['id']}")
+                            s3_client.delete_objects(
+                                Bucket=S3_BUCKET_NAME,
+                                Delete={'Objects': objects_to_delete}
+                            )
+                    except Exception as e:
+                        app.logger.error(f"Erro ao remover arquivos da resposta {resposta['id']} no S3: {e}")
+                        continue
             
             cursor.execute('DELETE FROM respostas WHERE grupo_id = %s', (group_id,))
             
@@ -2629,23 +2670,34 @@ def excluir_resposta(resposta_id):
         if not lider:
             return jsonify({'success': False, 'message': 'Líder do grupo não encontrado'}), 404
 
-        # Remove os arquivos da resposta
-        caminho_pasta = os.path.join(
-            app.config['UPLOAD_FOLDER'],
-            f'proposta_{resposta["tarefa_id"]}',
-            f'grupo_{grupo_id}',
-            f'resposta_{resposta_id}'
-        )
-        
-        if os.path.exists(caminho_pasta):
-            app.logger.info(f"Removendo arquivos da resposta {resposta_id} em {caminho_pasta}")
+        # Remove os arquivos da resposta no S3 (apenas a pasta específica da resposta)
+        if s3_client and S3_BUCKET_NAME:
             try:
-                shutil.rmtree(caminho_pasta)
-            except OSError as e:
-                app.logger.error(f"Erro ao remover arquivos: {e}")
+                prefix = f"respostas/proposta_{resposta['tarefa_id']}/grupo_{grupo_id}/resposta_{resposta_id}/"
+                
+                # Lista todos os objetos na pasta da resposta
+                objects_to_delete = []
+                list_objects = s3_client.list_objects_v2(
+                    Bucket=S3_BUCKET_NAME,
+                    Prefix=prefix
+                )
+                
+                if 'Contents' in list_objects:
+                    objects_to_delete = [{'Key': obj['Key']} for obj in list_objects['Contents']]
+                
+                # Remove todos os objetos da pasta da resposta
+                if objects_to_delete:
+                    app.logger.info(f"Removendo {len(objects_to_delete)} arquivos do S3 para resposta {resposta_id}")
+                    s3_client.delete_objects(
+                        Bucket=S3_BUCKET_NAME,
+                        Delete={'Objects': objects_to_delete}
+                    )
+                    
+            except Exception as e:
+                app.logger.error(f"Erro ao remover arquivos do S3: {e}")
                 return jsonify({
                     'success': False,
-                    'message': 'Erro ao remover arquivos da resposta'
+                    'message': 'Erro ao remover arquivos da resposta no S3'
                 }), 500
 
         # Remove a resposta do banco de dados
