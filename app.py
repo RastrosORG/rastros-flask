@@ -17,11 +17,18 @@ app.secret_key = 'supersecretkey'
 # Carrega variáveis de ambiente
 load_dotenv()
 
+# Configuração de caminhos
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # Limite de 50MB para uploads
+
+# Certifique-se que o diretório de upload existe
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 # Configuração do AWS S3
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')  # Chave de acesso da AWS
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')  # Chave secreta da AWS
-AWS_REGION = os.getenv('AWS_REGION', 'us-east-2')  # Região do bucket (padrão: us-east-1)
-S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')  # Nome do seu bucket S3
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_REGION = os.getenv('AWS_REGION', 'us-east-2')
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 
 # Configuração do cliente S3
 s3_client = boto3.client(
@@ -29,7 +36,10 @@ s3_client = boto3.client(
     aws_access_key_id=AWS_ACCESS_KEY_ID,
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
     region_name=AWS_REGION
-)
+) if all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET_NAME]) else None
+
+if not s3_client:
+    app.logger.warning("Configuração do S3 incompleta - funcionalidades de upload serão limitadas")
 
 ALLOWED_EXTENSIONS = {
     # Imagens
@@ -43,8 +53,6 @@ ALLOWED_EXTENSIONS = {
     # Compactados
     'zip', 'rar', '7z', 'tar', 'gz',
 }
-
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # Limite de 50MB para uploads
 
 def get_db_connection():
     try:
@@ -60,12 +68,15 @@ def get_db_connection():
         app.logger.error(f"Erro ao conectar ao PostgreSQL: {e}")
         raise
 
-# Verifica se o arquivo tem uma extensão permitida
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def upload_file_to_s3(file, bucket_name, s3_path):
     """Faz upload de um arquivo para o S3"""
+    if not s3_client:
+        app.logger.error("Tentativa de upload sem cliente S3 configurado")
+        return False
+        
     try:
         s3_client.upload_fileobj(
             file,
@@ -83,6 +94,9 @@ def upload_file_to_s3(file, bucket_name, s3_path):
 
 def generate_presigned_url(bucket_name, object_name, expiration=3600):
     """Gera uma URL assinada para acesso temporário ao arquivo"""
+    if not s3_client:
+        return None
+        
     try:
         response = s3_client.generate_presigned_url('get_object',
                                                   Params={'Bucket': bucket_name,
@@ -95,6 +109,9 @@ def generate_presigned_url(bucket_name, object_name, expiration=3600):
 
 def delete_file_from_s3(bucket_name, object_name):
     """Remove um arquivo do S3"""
+    if not s3_client:
+        return False
+        
     try:
         s3_client.delete_object(Bucket=bucket_name, Key=object_name)
         return True
