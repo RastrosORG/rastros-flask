@@ -2272,19 +2272,19 @@ def avaliar_respostas():
         resposta = cursor.fetchone()
 
         # Buscar arquivos da resposta (código mantido igual)
-        resposta_path = os.path.join(
-            app.config['UPLOAD_FOLDER'],
-            f'proposta_{resposta["tarefa_id"]}',
-            f'grupo_{resposta["grupo_id"]}',
-            f'resposta_{resposta["id"]}'
-        )
         arquivos = []
-        if os.path.exists(resposta_path):
+        if s3_client and S3_BUCKET_NAME:
             try:
-                arquivos = [f for f in os.listdir(resposta_path) 
-                          if os.path.isfile(os.path.join(resposta_path, f))]
-            except OSError as e:
-                app.logger.error(f"Erro ao acessar arquivos da resposta: {e}")
+                prefix = f"respostas/proposta_{resposta['tarefa_id']}/grupo_{resposta['grupo_id']}/resposta_{resposta['id']}/"
+                response = s3_client.list_objects_v2(
+                    Bucket=S3_BUCKET_NAME,
+                    Prefix=prefix
+                )
+                arquivos = [obj['Key'].split('/')[-1] for obj in response.get('Contents', [])]
+                app.logger.debug(f"Arquivos encontrados no S3: {arquivos}")
+            except Exception as e:
+                app.logger.error(f"Erro ao listar arquivos no S3: {e}")
+                arquivos = []
 
         return render_template('avaliar_respostas.html',
                             resposta=resposta,
