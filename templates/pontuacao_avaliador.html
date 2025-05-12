@@ -190,7 +190,7 @@
             arquivosLista.innerHTML = resposta.arquivos_completos && resposta.arquivos_completos.length ? 
                 resposta.arquivos_completos.map(arquivo => `
                     <li>
-                        <a href="{{ url_for('static', filename='') }}${arquivo}" target="_blank">
+                        <a href="https://${S3_BUCKET_NAME}.s3.amazonaws.com/${arquivo}" target="_blank">
                             ${arquivo.split('/').pop()}
                         </a>
                     </li>
