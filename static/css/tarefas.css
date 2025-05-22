@@ -145,6 +145,9 @@ body.tarefas-page {
 }
 
 .proposta-body p {
+    white-space: pre-line;  /* Preserva quebras de linha (\n) */
+    line-height: 1.6;       /* Mantém o espaçamento entre linhas */
+    margin-bottom: 15px;    /* Mantém o espaçamento entre parágrafos */
     color: #e1dedc;
     line-height: 1.6;
     margin-bottom: 15px;
