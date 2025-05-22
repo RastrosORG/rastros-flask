@@ -67,7 +67,23 @@
         // Dados do gráfico de Ranking (serão preenchidos dinamicamente pelo Flask)
         const grupos = {{ grupos|tojson|safe if grupos else [] }};
         const pontos = {{ pontos|tojson|safe if pontos else [] }};
-        const cores = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+        function gerarCores(qtd) {
+            const coresPadrao = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+                '#8AC24A', '#FF5722', '#607D8B', '#9C27B0', '#00BCD4',
+                '#CDDC39', '#795548', '#E91E63', '#3F51B5', '#009688'
+            ];
+            const coresExtras = [];
+            
+            // Se precisar de mais cores, gera aleatórias
+            for (let i = 0; i < qtd - coresPadrao.length; i++) {
+                coresExtras.push(`#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`);
+            }
+            
+            return [...coresPadrao, ...coresExtras];
+        }
+
+        const cores = gerarCores(grupos.length); // Gera cores para todos os grupos
     
         // Configuração do gráfico de Ranking
         const ctxRanking = document.getElementById('rankingChart').getContext('2d');
