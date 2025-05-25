@@ -2235,7 +2235,7 @@ def avaliar_respostas():
                         WHERE id = %s
                     ''', (observacao, pontuacao, resposta_id))
                     
-                    mensagem = f"Sua resposta para a proposta '{resposta['proposta_nome']}' foi ACEITA. Pontuação: {pontuacao}. Observação: {observacao}"
+                    mensagem = f"A resposta '{resposta['titulo']}' para a proposta '{resposta['proposta_nome']}' foi ACEITA. Pontuação: {pontuacao}. Observação: {observacao}"
 
                 elif acao == 'aceitar_com_alteracoes':
                     categoria_nova = request.form.get('categorias_novas')
@@ -2252,7 +2252,7 @@ def avaliar_respostas():
                         WHERE id = %s
                     ''', (observacao, categoria_nova, pontuacao, resposta_id))
                     
-                    mensagem = f"Sua resposta para a proposta '{resposta['proposta_nome']}' foi ACEITA COM ALTERAÇÕES. Nova pontuação: {pontuacao}. Observação: {observacao}"
+                    mensagem = f"A resposta '{resposta['titulo']}' para a proposta '{resposta['proposta_nome']}' foi ACEITA COM ALTERAÇÕES. Nova pontuação: {pontuacao}. Observação: {observacao}"
 
                 elif acao == 'rejeitar':
                     cursor.execute('''
@@ -2265,7 +2265,7 @@ def avaliar_respostas():
                         WHERE id = %s
                     ''', (observacao, resposta_id))
                     
-                    mensagem = f"Sua resposta para a proposta '{resposta['proposta_nome']}' foi REJEITADA. Observação: {observacao}"
+                    mensagem = f"A resposta '{resposta['titulo']}' para a proposta '{resposta['proposta_nome']}' foi REJEITADA. Observação: {observacao}"
 
                 # Enviar notificação para todos os membros do grupo
                 cursor.execute('''
@@ -2707,30 +2707,30 @@ def alterar_pontuacao_resposta(resposta_id):
             UPDATE respostas 
             SET categorias = %s, pontuacao = %s 
             WHERE id = %s
-            RETURNING grupo_id, titulo
+            RETURNING titulo, grupo_id, proposta_id
         ''', (str(categoria_id), pontos, resposta_id))
         
-        resultado = cursor.fetchone()
-        grupo_id = resultado['grupo_id']
-        titulo_resposta = resultado['titulo']
+        resposta = cursor.fetchone()
         
-        # 2. Obtém os membros do grupo
+        # 2. Obtém o nome da proposta
+        cursor.execute('SELECT nome FROM propostas WHERE id = %s', (resposta['proposta_id'],))
+        proposta_nome = cursor.fetchone()['nome']
+        
+        # 3. Obtém os membros do grupo
         cursor.execute('''
             SELECT user_id FROM group_members 
             WHERE group_id = %s AND status IN ('Líder', 'Membro')
-        ''', (grupo_id,))
+        ''', (resposta['grupo_id'],))
         membros = cursor.fetchall()
         
-        # 3. Cria notificação para cada membro do grupo
+        # 4. Cria notificação para cada membro do grupo
         for membro in membros:
+            mensagem = f"A pontuação da resposta '{resposta['titulo']}' para a proposta '{proposta_nome}' foi alterada para {pontos} pontos"
+            
             cursor.execute('''
                 INSERT INTO notifications (user_id, message, group_id)
                 VALUES (%s, %s, %s)
-            ''', (
-                membro['user_id'],
-                f'A pontuação da resposta "{titulo_resposta}" foi alterada para {pontos} pontos',
-                grupo_id
-            ))
+            ''', (membro['user_id'], mensagem, resposta['grupo_id']))
         
         conn.commit()
         return jsonify({'success': True})
