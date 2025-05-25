@@ -2206,13 +2206,23 @@ def avaliar_respostas():
             resposta_id = request.form.get('resposta_id', type=int)
 
             if resposta_id:
+                # Primeiro, obter informações da resposta antes de atualizar
+                cursor.execute('''
+                    SELECT r.*, p.nome AS proposta_nome, g.name AS grupo_nome
+                    FROM respostas r
+                    JOIN propostas p ON r.tarefa_id = p.id
+                    JOIN groups g ON r.grupo_id = g.id
+                    WHERE r.id = %s
+                ''', (resposta_id,))
+                resposta = cursor.fetchone()
+
                 if acao == 'aceitar':
                     cursor.execute('SELECT categorias FROM respostas WHERE id = %s', (resposta_id,))
-                    resposta = cursor.fetchone()
+                    resposta_categorias = cursor.fetchone()
                     pontuacao = 0
                     
-                    if resposta and resposta['categorias']:
-                        categoria_id = resposta['categorias'].split(',')[0]
+                    if resposta_categorias and resposta_categorias['categorias']:
+                        categoria_id = resposta_categorias['categorias'].split(',')[0]
                         pontuacao = categorias_dict[int(categoria_id)]['valor']
 
                     cursor.execute('''
@@ -2224,6 +2234,8 @@ def avaliar_respostas():
                             pontuacao = %s 
                         WHERE id = %s
                     ''', (observacao, pontuacao, resposta_id))
+                    
+                    mensagem = f"Sua resposta para a proposta '{resposta['proposta_nome']}' foi ACEITA. Pontuação: {pontuacao}. Observação: {observacao}"
 
                 elif acao == 'aceitar_com_alteracoes':
                     categoria_nova = request.form.get('categorias_novas')
@@ -2239,6 +2251,8 @@ def avaliar_respostas():
                             pontuacao = %s 
                         WHERE id = %s
                     ''', (observacao, categoria_nova, pontuacao, resposta_id))
+                    
+                    mensagem = f"Sua resposta para a proposta '{resposta['proposta_nome']}' foi ACEITA COM ALTERAÇÕES. Nova pontuação: {pontuacao}. Observação: {observacao}"
 
                 elif acao == 'rejeitar':
                     cursor.execute('''
@@ -2250,11 +2264,27 @@ def avaliar_respostas():
                             pontuacao = 0 
                         WHERE id = %s
                     ''', (observacao, resposta_id))
+                    
+                    mensagem = f"Sua resposta para a proposta '{resposta['proposta_nome']}' foi REJEITADA. Observação: {observacao}"
+
+                # Enviar notificação para todos os membros do grupo
+                cursor.execute('''
+                    SELECT user_id FROM group_members 
+                    WHERE group_id = %s AND status = 'aceito'
+                ''', (resposta['grupo_id'],))
+                membros = cursor.fetchall()
+                
+                for membro in membros:
+                    cursor.execute('''
+                        INSERT INTO notifications (user_id, message, group_id, read)
+                        VALUES (%s, %s, %s, 0)
+                    ''', (membro['user_id'], mensagem, resposta['grupo_id']))
 
                 conn.commit()
                 flash('Avaliação registrada com sucesso!', 'success')
                 return redirect(url_for('avaliar_respostas', proposta_id=proposta_id, grupo_id=grupo_id))
 
+        # Restante do código permanece igual...
         # Fluxo GET - Navegação hierárquica (mantendo comparações com 1/0)
         if not proposta_id:
             cursor.execute('''
