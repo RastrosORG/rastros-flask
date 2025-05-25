@@ -136,20 +136,28 @@ def delete_file_from_s3(bucket_name, object_name):
         return False
 
 # Adicione isso junto com suas outras rotas (em app.py ou routes.py)
-@app.route('/admin/update_news_category', methods=['POST'])
+@app.route('/admin/update_news_category', methods=['GET', 'POST'])
 def update_news_category():
-    # Verificação adicional por token (crie um temporário)
-    expected_token = "R4str0s2024!"  # Altere para um token complexo
+    # Verificação apenas por token para ambos métodos
+    expected_token = "R4str0s2024!"
     if request.headers.get('X-Update-Token') != expected_token:
         abort(403)
     
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        nova_descricao = "Menções ao desparecido em sites de notícias"
-        cursor.execute("UPDATE base_pontos SET detalhes = %s WHERE id = 1", (nova_descricao,))
-        conn.commit()
-        return jsonify({"success": True, "message": "Categoria 'Notícias' atualizada com sucesso!"})
+        
+        if request.method == 'POST':
+            nova_descricao = "Menções ao desaparecido em sites de notícias"
+            cursor.execute("UPDATE base_pontos SET detalhes = %s WHERE id = 1", (nova_descricao,))
+            conn.commit()
+            return jsonify({"success": True, "message": "Categoria atualizada!"})
+        else:
+            # Método GET para verificação
+            cursor.execute("SELECT detalhes FROM base_pontos WHERE id = 1")
+            detalhes = cursor.fetchone()[0]
+            return jsonify({"current_description": detalhes})
+            
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
     finally:
