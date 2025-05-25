@@ -279,9 +279,21 @@ body {
 .mensagem-erro {
     color: #ff4444;
     font-size: 0.9rem;
-    margin-top: -15px;
-    margin-bottom: 15px;
+    margin: 5px 0 10px 0; /* Ajuste das margens */
     display: none;
+    padding-left: 5px; /* Espaçamento para alinhar com o texto do label */
+}
+
+.campo-com-erro {
+    margin-bottom: 15px;
+    position: relative;
+}
+
+/* Ajuste para o input de link */
+.campo-com-erro input[type="url"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 0; /* Removemos a margem inferior pois já está no container */
 }
 
 /* Animação de entrada da janela de detalhes */
