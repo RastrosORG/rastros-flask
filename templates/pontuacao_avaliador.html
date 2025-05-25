@@ -74,6 +74,18 @@
             <p><strong>Observação:</strong> <span id="respostaObservacao"></span></p>
             <p><strong>Pontuação:</strong> <span id="respostaPontuacao"></span></p>
             <button onclick="excluirResposta(event)">EXCLUIR RESPOSTA</button>
+            <button onclick="abrirModalAlterarPontuacao()">ALTERAR PONTUAÇÃO</button>
+
+            <div id="modalAlterarPontuacao" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close-modal" onclick="fecharModalAlterarPontuacao()">&times;</span>
+                <h2>Alterar Pontuação</h2>
+                <div id="listaCategorias"></div>
+                <div class="modal-buttons">
+                    <button onclick="confirmarAlteracaoPontuacao()" class="confirm-button">Confirmar</button>
+                    <button onclick="fecharModalAlterarPontuacao()" class="cancel-button">Cancelar</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -255,6 +267,89 @@
         }
 
         document.addEventListener('DOMContentLoaded', initPropostaCards);
+
+        let categoriaSelecionada = null;
+
+        function abrirModalAlterarPontuacao() {
+            // Carrega as categorias disponíveis
+            fetch('/get_categorias')
+                .then(response => response.json())
+                .then(categorias => {
+                    const listaCategorias = document.getElementById('listaCategorias');
+                    listaCategorias.innerHTML = categorias.map(categoria => `
+                        <div class="categoria-option" data-categoria-id="${categoria.id}" 
+                            onclick="selecionarCategoria(this, ${categoria.id}, '${categoria.categoria.replace(/'/g, "\\'")}', ${categoria.valor})">
+                            <h3>${categoria.categoria}</h3>
+                            <div class="pontos">${categoria.valor} pontos</div>
+                            <div class="detalhes">${categoria.detalhes}</div>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('modalAlterarPontuacao').style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar categorias:', error);
+                    alert('Erro ao carregar categorias disponíveis');
+                });
+        }
+
+        function fecharModalAlterarPontuacao() {
+            document.getElementById('modalAlterarPontuacao').style.display = 'none';
+            categoriaSelecionada = null;
+        }
+
+        function selecionarCategoria(element, id, nome, pontos) {
+            // Remove a seleção anterior
+            document.querySelectorAll('.categoria-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Adiciona a seleção atual
+            element.classList.add('selected');
+            categoriaSelecionada = { id, nome, pontos };
+        }
+
+        function confirmarAlteracaoPontuacao() {
+            if (!categoriaSelecionada || !respostaSelecionadaId) {
+                alert('Por favor, selecione uma categoria');
+                return;
+            }
+            
+            if (confirm(`Deseja alterar a pontuação para "${categoriaSelecionada.nome}" (${categoriaSelecionada.pontos} pontos)?`)) {
+                fetch(`/alterar_pontuacao_resposta/${respostaSelecionadaId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        categoria_id: categoriaSelecionada.id,
+                        pontos: categoriaSelecionada.pontos
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Pontuação alterada com sucesso! Os membros do grupo serão notificados.');
+                        fecharModalAlterarPontuacao();
+                        location.reload(); // Recarrega a página para mostrar a nova pontuação
+                    } else {
+                        alert(data.error || 'Erro ao alterar pontuação');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao alterar pontuação');
+                });
+            }
+        }
+
+        // Fechar o modal ao clicar fora dele
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalAlterarPontuacao');
+            if (event.target === modal) {
+                fecharModalAlterarPontuacao();
+            }
+        };
     </script>
 </body>
 </html>
