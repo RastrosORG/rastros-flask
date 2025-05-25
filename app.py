@@ -138,10 +138,6 @@ def delete_file_from_s3(bucket_name, object_name):
 # Adicione isso junto com suas outras rotas (em app.py ou routes.py)
 @app.route('/admin/update_news_category', methods=['POST'])
 def update_news_category():
-    # Verificação de segurança dupla
-    if not session.get('is_evaluator', 0):  # Ou outra verificação de permissão
-        abort(403)
-    
     # Verificação adicional por token (crie um temporário)
     expected_token = "R4str0s2024!"  # Altere para um token complexo
     if request.headers.get('X-Update-Token') != expected_token:
