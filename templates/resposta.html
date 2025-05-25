@@ -29,7 +29,7 @@
             <h1 class="tracking-in-expand">Fornecer Resposta</h1>
             <div class="title-divider"></div>
         </div>
-        <form action="{{ url_for('enviar_resposta') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ url_for('enviar_resposta') }}" method="POST" enctype="multipart/form-data" id="formResposta">
             <label for="proposta">Selecione a proposta:</label>
             <select name="proposta" id="proposta" required>
                 {% for proposta in propostas_aceitas %}
@@ -60,16 +60,17 @@
             <label for="descricao">Descrição:</label>
             <textarea id="descricao" name="descricao" rows="5" required></textarea>
 
-            <label for="link">*Link:</label>
-            <div id="erro-link" class="mensagem-erro">Por favor, forneça um link ou anexe arquivos</div>
-            <input type="url" id="link" name="link" placeholder="https://exemplo.com">
+            <label for="link">*Link (obrigatório):</label>
+            <input type="url" id="link" name="link" placeholder="https://exemplo.com" required>
+            <div id="erro-link" class="mensagem-erro">Por favor, forneça um link válido</div>
 
             <div class="anexos-container">
-                <label>*Anexar arquivos:</label>
-                <div id="erro-arquivos" class="mensagem-erro">Por favor, anexe arquivos ou forneça um link</div>
+                <label>*Anexar arquivos (obrigatório):</label>
+                <div id="erro-arquivos" class="mensagem-erro">Por favor, anexe pelo menos um arquivo</div>
                 <div class="anexos-area" id="area-arrastar-soltar">
                     <i class="fas fa-paperclip anexar-icon" onclick="document.getElementById('arquivos').click()"></i>
-                    <input type="file" id="arquivos" name="arquivos" multiple style="display: none;" onchange="atualizarListaAnexos(event)">
+                    <input type="file" id="arquivos" name="arquivos" multiple style="display: none;" 
+                           onchange="atualizarListaAnexos(event)" required>
                     <div id="lista-anexos" class="lista-anexos">
                         Nenhum arquivo enviado
                     </div>
@@ -90,8 +91,9 @@
     
             // Adiciona apenas os novos arquivos à lista
             novosArquivos.forEach(novoArquivo => {
-                // Verifica se o arquivo já está na lista
-                const arquivoExistente = arquivosSelecionados.find(arquivo => arquivo.name === novoArquivo.name && arquivo.size === novoArquivo.size);
+                const arquivoExistente = arquivosSelecionados.find(arquivo => 
+                    arquivo.name === novoArquivo.name && arquivo.size === novoArquivo.size
+                );
                 if (!arquivoExistente) {
                     arquivosSelecionados.push(novoArquivo);
                 }
@@ -113,6 +115,10 @@
                     `;
                     listaAnexos.appendChild(itemAnexo);
                 });
+                
+                // Validação - remove erro se arquivos foram adicionados
+                document.getElementById('area-arrastar-soltar').classList.remove('input-invalido');
+                document.getElementById('erro-arquivos').style.display = 'none';
             } else {
                 listaAnexos.innerHTML = 'Nenhum arquivo enviado';
             }
@@ -125,7 +131,7 @@
     
         // Função para remover um anexo da lista
         function removerAnexo(index) {
-            arquivosSelecionados.splice(index, 1); // Remove o arquivo da lista
+            arquivosSelecionados.splice(index, 1);
             const inputArquivos = document.getElementById('arquivos');
     
             // Atualizar o input de arquivos
@@ -152,6 +158,9 @@
                 });
             } else {
                 listaAnexos.innerHTML = 'Nenhum arquivo enviado';
+                // Mostra erro se todos arquivos foram removidos
+                document.getElementById('area-arrastar-soltar').classList.add('input-invalido');
+                document.getElementById('erro-arquivos').style.display = 'block';
             }
         }
     
@@ -206,7 +215,7 @@
                 janela.classList.add('scale-down-tl');
                 setTimeout(() => {
                     janela.style.display = 'none';
-                }, 400); // Tempo da animação de saída
+                }, 400);
             } else {
                 janela.style.display = 'block';
                 janela.classList.remove('scale-down-tl');
@@ -222,11 +231,22 @@
                 });
             }
         };
-
-        document.querySelector('form').addEventListener('submit', function(e) {
+        
+        // Função auxiliar para validar URL
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+        
+        // Validação do formulário
+        document.getElementById('formResposta').addEventListener('submit', function(e) {
             const link = document.getElementById('link').value.trim();
             const arquivos = document.getElementById('arquivos').files;
-            const temLink = link !== '';
+            const temLink = link !== '' && isValidUrl(link);
             const temArquivos = arquivos.length > 0;
             
             // Remove classes de erro anteriores
@@ -235,18 +255,40 @@
             document.getElementById('erro-link').style.display = 'none';
             document.getElementById('erro-arquivos').style.display = 'none';
             
-            // Verifica se pelo menos um dos campos está preenchido
-            if (!temLink && !temArquivos) {
-                e.preventDefault(); // Impede o envio do formulário
-                
-                // Adiciona classes de erro e mostra mensagens
+            let formularioValido = true;
+            
+            // Validação do link
+            if (!temLink) {
                 document.getElementById('link').classList.add('input-invalido');
-                document.getElementById('area-arrastar-soltar').classList.add('input-invalido');
                 document.getElementById('erro-link').style.display = 'block';
+                formularioValido = false;
+            }
+            
+            // Validação dos arquivos
+            if (!temArquivos) {
+                document.getElementById('area-arrastar-soltar').classList.add('input-invalido');
                 document.getElementById('erro-arquivos').style.display = 'block';
+                formularioValido = false;
+            }
+            
+            if (!formularioValido) {
+                e.preventDefault();
                 
-                // Rolagem suave para o primeiro campo inválido
-                document.getElementById('link').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Rolagem suave para o primeiro erro
+                if (!temLink) {
+                    document.getElementById('link').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else if (!temArquivos) {
+                    document.getElementById('area-arrastar-soltar').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+        
+        // Validação em tempo real para o link
+        document.getElementById('link').addEventListener('input', function() {
+            const link = this.value.trim();
+            if (link !== '' && isValidUrl(link)) {
+                this.classList.remove('input-invalido');
+                document.getElementById('erro-link').style.display = 'none';
             }
         });
     </script>
