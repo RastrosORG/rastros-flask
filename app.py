@@ -2244,7 +2244,7 @@ def avaliar_respostas():
                     cursor.execute('''
                         UPDATE respostas SET 
                             is_avaliada = 1, 
-                            is_reject = 1, 
+                            is_ = 1, 
                             is_modify = 0, 
                             observacao = %s, 
                             pontuacao = 0 
@@ -2646,6 +2646,72 @@ def get_respostas_avaliadas(proposta_id, grupo_id):
             cursor.close()
         if conn:
             conn.close()
+
+@app.route('/get_categorias')
+def get_categorias():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute('SELECT id, categoria, valor, detalhes FROM base_pontos ORDER BY valor DESC')
+        categorias = cursor.fetchall()
+        return jsonify([dict(categoria) for categoria in categorias])
+    except Exception as e:
+        app.logger.error(f"Erro ao buscar categorias: {e}")
+        return jsonify({'error': 'Erro ao buscar categorias'}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+@app.route('/alterar_pontuacao_resposta/<int:resposta_id>', methods=['POST'])
+def alterar_pontuacao_resposta(resposta_id):
+    try:
+        data = request.get_json()
+        categoria_id = data.get('categoria_id')
+        pontos = data.get('pontos')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
+        # 1. Atualiza a pontuação da resposta
+        cursor.execute('''
+            UPDATE respostas 
+            SET categorias = %s, pontuacao = %s 
+            WHERE id = %s
+            RETURNING grupo_id, titulo
+        ''', (str(categoria_id), pontos, resposta_id))
+        
+        resultado = cursor.fetchone()
+        grupo_id = resultado['grupo_id']
+        titulo_resposta = resultado['titulo']
+        
+        # 2. Obtém os membros do grupo
+        cursor.execute('''
+            SELECT user_id FROM group_members 
+            WHERE group_id = %s AND status IN ('Líder', 'Membro')
+        ''', (grupo_id,))
+        membros = cursor.fetchall()
+        
+        # 3. Cria notificação para cada membro do grupo
+        for membro in membros:
+            cursor.execute('''
+                INSERT INTO notifications (user_id, message, group_id)
+                VALUES (%s, %s, %s)
+            ''', (
+                membro['user_id'],
+                f'A pontuação da resposta "{titulo_resposta}" foi alterada para {pontos} pontos',
+                grupo_id
+            ))
+        
+        conn.commit()
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Erro ao alterar pontuação: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 
 @app.route('/excluir_resposta/<int:resposta_id>', methods=['DELETE'])
 def excluir_resposta(resposta_id):
