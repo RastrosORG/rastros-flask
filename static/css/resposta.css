@@ -264,6 +264,26 @@ body {
     position: relative; /* Para posicionar a janela de detalhes */
 }
 
+/* Arquvios invalidos */
+.input-invalido {
+    border: 2px solid #ff4444 !important;
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+}
+
+.mensagem-erro {
+    color: #ff4444;
+    font-size: 0.9rem;
+    margin-top: -15px;
+    margin-bottom: 15px;
+    display: none;
+}
+
 /* Animação de entrada da janela de detalhes */
 .scale-up-tl {
     -webkit-animation: scale-up-tl 0.4s cubic-bezier(0.390, 0.575, 0.565, 1.000) both;
