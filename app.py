@@ -2270,7 +2270,7 @@ def avaliar_respostas():
                 # Enviar notificação para todos os membros do grupo
                 cursor.execute('''
                     SELECT user_id FROM group_members 
-                    WHERE group_id = %s AND status = 'aceito'
+                    WHERE group_id = %s AND status = 'Membro'
                 ''', (resposta['grupo_id'],))
                 membros = cursor.fetchall()
                 
