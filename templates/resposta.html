@@ -60,11 +60,12 @@
             <label for="descricao">Descrição:</label>
             <textarea id="descricao" name="descricao" rows="5" required></textarea>
 
-            <label for="link">Link:</label>
+            <label for="link">*Link:</label>
             <input type="url" id="link" name="link" placeholder="https://exemplo.com">
+            <div id="erro-link" class="mensagem-erro">Por favor, forneça um link ou anexe arquivos</div>
 
             <div class="anexos-container">
-                <label>Anexar arquivos:</label>
+                <label>*Anexar arquivos:</label>
                 <div class="anexos-area" id="area-arrastar-soltar">
                     <i class="fas fa-paperclip anexar-icon" onclick="document.getElementById('arquivos').click()"></i>
                     <input type="file" id="arquivos" name="arquivos" multiple style="display: none;" onchange="atualizarListaAnexos(event)">
@@ -72,6 +73,7 @@
                         Nenhum arquivo enviado
                     </div>
                 </div>
+                <div id="erro-arquivos" class="mensagem-erro">Por favor, anexe arquivos ou forneça um link</div>
             </div>
 
             <button type="submit">Enviar Resposta</button>
@@ -220,6 +222,33 @@
                 });
             }
         };
+
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const link = document.getElementById('link').value.trim();
+            const arquivos = document.getElementById('arquivos').files;
+            const temLink = link !== '';
+            const temArquivos = arquivos.length > 0;
+            
+            // Remove classes de erro anteriores
+            document.getElementById('link').classList.remove('input-invalido');
+            document.getElementById('area-arrastar-soltar').classList.remove('input-invalido');
+            document.getElementById('erro-link').style.display = 'none';
+            document.getElementById('erro-arquivos').style.display = 'none';
+            
+            // Verifica se pelo menos um dos campos está preenchido
+            if (!temLink && !temArquivos) {
+                e.preventDefault(); // Impede o envio do formulário
+                
+                // Adiciona classes de erro e mostra mensagens
+                document.getElementById('link').classList.add('input-invalido');
+                document.getElementById('area-arrastar-soltar').classList.add('input-invalido');
+                document.getElementById('erro-link').style.display = 'block';
+                document.getElementById('erro-arquivos').style.display = 'block';
+                
+                // Rolagem suave para o primeiro campo inválido
+                document.getElementById('link').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
     </script>
 </body>
 </html>
