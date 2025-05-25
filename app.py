@@ -2244,7 +2244,7 @@ def avaliar_respostas():
                     cursor.execute('''
                         UPDATE respostas SET 
                             is_avaliada = 1, 
-                            is_ = 1, 
+                            is_reject = 1, 
                             is_modify = 0, 
                             observacao = %s, 
                             pontuacao = 0 
