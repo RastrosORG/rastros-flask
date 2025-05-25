@@ -10,6 +10,55 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/proposta.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cronometro.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Estilos do painel admin */
+        .admin-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 1000;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            border: 1px solid #444;
+        }
+        .btn-admin {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-admin:hover {
+            background: #c0392b;
+        }
+        .update-result {
+            margin-top: 10px;
+            color: white;
+            font-size: 14px;
+            max-width: 300px;
+        }
+        .update-result .success { 
+            color: #2ecc71;
+        }
+        .update-result .error { 
+            color: #e74c3c;
+        }
+        .fa-spin { 
+            margin-right: 5px;
+        }
+        .current-description {
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            font-style: italic;
+        }
+    </style>
 </head>
 <body>
     
@@ -18,9 +67,6 @@
 
     <!-- Adiciona o cronômetro -->
     {% include 'cronometro.html' %}
-
-    <!-- Inclui o JavaScript do cronômetro -->
-    <script src="{{ url_for('static', filename='js/cronometro.js') }}"></script>
 
     <!-- Banner com imagem de fundo -->
     <div class="banner"></div>
@@ -52,6 +98,24 @@
         </form>
     </div>
 
+    <!-- Painel Admin Temporário -->
+    {% if session.get('is_evaluator') == 1 %}
+    <div class="admin-panel">
+        <h3 style="color:white;margin-top:0;margin-bottom:10px;">Ferramenta Temporária</h3>
+        <button onclick="updateNewsCategory()" class="btn-admin">
+            <i class="fas fa-sync-alt"></i> Atualizar Categoria Notícias
+        </button>
+        <div id="update-result" class="update-result">
+            <div class="current-description">
+                <i class="fas fa-spinner fa-spin"></i> Carregando descrição atual...
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Inclui o JavaScript do cronômetro -->
+    <script src="{{ url_for('static', filename='js/cronometro.js') }}"></script>
+
     <script>
         // Lista de arquivos selecionados
         let arquivosSelecionados = [];
@@ -62,32 +126,16 @@
     
             // Adiciona apenas os novos arquivos à lista
             novosArquivos.forEach(novoArquivo => {
-                // Verifica se o arquivo já está na lista
-                const arquivoExistente = arquivosSelecionados.find(arquivo => arquivo.name === novoArquivo.name && arquivo.size === novoArquivo.size);
+                const arquivoExistente = arquivosSelecionados.find(arquivo => 
+                    arquivo.name === novoArquivo.name && arquivo.size === novoArquivo.size
+                );
                 if (!arquivoExistente) {
                     arquivosSelecionados.push(novoArquivo);
                 }
             });
     
             const listaAnexos = document.getElementById('lista-anexos');
-            listaAnexos.innerHTML = '';
-    
-            if (arquivosSelecionados.length > 0) {
-                arquivosSelecionados.forEach((arquivo, index) => {
-                    const icone = obterIconePorTipo(arquivo.type);
-                    const itemAnexo = document.createElement('div');
-                    itemAnexo.className = 'item-anexo';
-                    itemAnexo.innerHTML = `
-                        <span class="arquivo-info">
-                            ${icone} ${arquivo.name}
-                        </span>
-                        <i class="fas fa-times remover-anexo" onclick="removerAnexo(${index})"></i>
-                    `;
-                    listaAnexos.appendChild(itemAnexo);
-                });
-            } else {
-                listaAnexos.innerHTML = 'Nenhum arquivo enviado';
-            }
+            atualizarExibicaoAnexos(listaAnexos);
     
             // Atualizar o input de arquivos
             const dataTransfer = new DataTransfer();
@@ -97,7 +145,7 @@
     
         // Função para remover um anexo da lista
         function removerAnexo(index) {
-            arquivosSelecionados.splice(index, 1); // Remove o arquivo da lista
+            arquivosSelecionados.splice(index, 1);
             const inputArquivos = document.getElementById('arquivos');
     
             // Atualizar o input de arquivos
@@ -105,9 +153,14 @@
             arquivosSelecionados.forEach(arquivo => dataTransfer.items.add(arquivo));
             inputArquivos.files = dataTransfer.files;
     
-            // Atualizar a lista de anexos exibida
+            // Atualizar a exibição
             const listaAnexos = document.getElementById('lista-anexos');
-            listaAnexos.innerHTML = '';
+            atualizarExibicaoAnexos(listaAnexos);
+        }
+    
+        // Função para atualizar a exibição dos anexos
+        function atualizarExibicaoAnexos(elemento) {
+            elemento.innerHTML = '';
     
             if (arquivosSelecionados.length > 0) {
                 arquivosSelecionados.forEach((arquivo, index) => {
@@ -116,14 +169,14 @@
                     itemAnexo.className = 'item-anexo';
                     itemAnexo.innerHTML = `
                         <span class="arquivo-info">
-                            ${icone} ${arquivo.name}
+                            ${icone} ${arquivo.name} (${formatarTamanho(arquivo.size)})
                         </span>
                         <i class="fas fa-times remover-anexo" onclick="removerAnexo(${index})"></i>
                     `;
-                    listaAnexos.appendChild(itemAnexo);
+                    elemento.appendChild(itemAnexo);
                 });
             } else {
-                listaAnexos.innerHTML = 'Nenhum arquivo enviado';
+                elemento.innerHTML = 'Nenhum arquivo enviado';
             }
         }
     
@@ -135,9 +188,24 @@
                 return '<i class="fas fa-file-video"></i>';
             } else if (tipo === 'application/pdf') {
                 return '<i class="fas fa-file-pdf"></i>';
+            } else if (tipo.includes('spreadsheet') || tipo.includes('excel')) {
+                return '<i class="fas fa-file-excel"></i>';
+            } else if (tipo.includes('word')) {
+                return '<i class="fas fa-file-word"></i>';
+            } else if (tipo.includes('zip') || tipo.includes('compressed')) {
+                return '<i class="fas fa-file-archive"></i>';
             } else {
                 return '<i class="fas fa-file"></i>';
             }
+        }
+    
+        // Função para formatar tamanho do arquivo
+        function formatarTamanho(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
     
         // Função para arrastar e soltar arquivos
@@ -168,6 +236,90 @@
             // Atualiza a lista de anexos
             atualizarListaAnexos({ target: inputArquivos });
         });
+
+        // =============================================
+        // FUNÇÕES PARA ATUALIZAÇÃO DA CATEGORIA NOTÍCIAS
+        // =============================================
+
+        // Verifica o estado atual ao carregar a página
+        function loadCurrentDescription() {
+            fetch('/admin/update_news_category', {
+                method: 'GET',
+                headers: {
+                    'X-Update-Token': 'R4str0s2024!'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erro na requisição');
+                return response.json();
+            })
+            .then(data => {
+                const resultDiv = document.getElementById('update-result');
+                resultDiv.innerHTML = `
+                    <div class="current-description">
+                        <strong>Descrição atual:</strong><br>
+                        "${data.current_description}"
+                    </div>
+                `;
+            })
+            .catch(error => {
+                const resultDiv = document.getElementById('update-result');
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-exclamation-triangle"></i> Não foi possível carregar a descrição atual
+                    </div>
+                `;
+                console.error('Erro:', error);
+            });
+        }
+
+        // Atualiza a categoria
+        function updateNewsCategory() {
+            const resultDiv = document.getElementById('update-result');
+            resultDiv.innerHTML = `
+                <div class="current-description">
+                    <i class="fas fa-spinner fa-spin"></i> Atualizando...
+                </div>
+            `;
+            
+            fetch('/admin/update_news_category', {
+                method: 'POST',
+                headers: {
+                    'X-Update-Token': 'R4str0s2024!',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erro na requisição');
+                return response.json();
+            })
+            .then(data => {
+                if(data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <i class="fas fa-check-circle"></i> ${data.message}
+                        </div>
+                    `;
+                    // Recarrega a descrição atual após 2 segundos
+                    setTimeout(loadCurrentDescription, 2000);
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido');
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-times-circle"></i> Erro: ${error.message || 'Falha na atualização'}
+                    </div>
+                `;
+                console.error('Erro:', error);
+            });
+        }
+
+        // Carrega a descrição quando a página é carregada
+        if (document.querySelector('.admin-panel')) {
+            loadCurrentDescription();
+        }
     </script>
 </body>
 </html>
