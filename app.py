@@ -2707,13 +2707,13 @@ def alterar_pontuacao_resposta(resposta_id):
             UPDATE respostas 
             SET categorias = %s, pontuacao = %s 
             WHERE id = %s
-            RETURNING titulo, grupo_id, proposta_id
+            RETURNING titulo, grupo_id, tarefa_id
         ''', (str(categoria_id), pontos, resposta_id))
         
         resposta = cursor.fetchone()
         
         # 2. Obtém o nome da proposta
-        cursor.execute('SELECT nome FROM propostas WHERE id = %s', (resposta['proposta_id'],))
+        cursor.execute('SELECT nome FROM propostas WHERE id = %s', (resposta['tarefa_id'],))
         proposta_nome = cursor.fetchone()['nome']
         
         # 3. Obtém os membros do grupo
