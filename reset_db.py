@@ -1,35 +1,40 @@
+import psycopg2
 import os
-from psycopg2 import connect, sql
 from dotenv import load_dotenv
 
+# Carrega variáveis do .env
 load_dotenv()
 
-def nuclear_reset():
-    conn = connect(os.getenv('DATABASE_URL'))  # Usa a URL do Render
-    conn.autocommit = True  # Permite operações DDL
-    cursor = conn.cursor()
+def reset_db():
+    conn = psycopg2.connect(
+        dbname=os.getenv('POSTGRES_DB'),
+        user=os.getenv('POSTGRES_USER'),
+        password=os.getenv('POSTGRES_PASSWORD'),
+        host=os.getenv('POSTGRES_HOST'),
+        port=os.getenv('POSTGRES_PORT', '5432')
+    )
+    conn.autocommit = True
+    cur = conn.cursor()
 
-    try:
-        print("💣 Iniciando reset nuclear...")
+    # Dropa todas as tabelas em cascata
+    print("Deletando todas as tabelas...")
+    cur.execute("""
+        DO $$ DECLARE
+            r RECORD;
+        BEGIN
+            FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+                EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+            END LOOP;
+        END $$;
+    """)
 
-        # 1. Destruição total (exceto o banco em si)
-        cursor.execute("""
-        DROP SCHEMA public CASCADE;
-        CREATE SCHEMA public;
-        GRANT ALL ON SCHEMA public TO current_user;
-        """)
+    conn.commit()
+    conn.close()
+    print("Tabelas deletadas com sucesso!")
 
-        # 2. Recriação completa (igual à primeira execução)
-        print("🔄 Recriando toda a estrutura...")
-        from database import create_db
-        create_db()  # Usa sua função original que já insere os valores padrão
-
-        print("✅ Banco resetado para o estado inicial!")
-
-    except Exception as e:
-        print(f"❌ Falha catastrófica: {e}")
-    finally:
-        conn.close()
+    # Agora recria todas as tabelas com seu método já existente
+    from database import create_db
+    create_db()
 
 if __name__ == '__main__':
-    nuclear_reset()
+    reset_db()
