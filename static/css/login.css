@@ -1,0 +1,429 @@
+/* login.css */
+
+/* Fundo sólido grafite */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #1d1e20;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #333;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Animação do título Rastros */
+.tracking-in-expand {
+    -webkit-animation: tracking-in-expand 0.7s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+            animation: tracking-in-expand 0.7s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+}
+
+@-webkit-keyframes tracking-in-expand {
+    0% {
+        letter-spacing: -0.5em;
+        opacity: 0;
+    }
+    40% {
+        opacity: 0.6;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes tracking-in-expand {
+    0% {
+        letter-spacing: -0.5em;
+        opacity: 0;
+    }
+    40% {
+        opacity: 0.6;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Nome do site estilizado */
+.site-title {
+    position: absolute;
+    left: 13%;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 64px; 
+    font-weight: normal;
+    font-family: 'Amonos_Display', sans-serif;
+    color: white; 
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Substituir o "O" pela logo */
+.site-title .o-image {
+    display: inline-block;
+    width: 55px; 
+    height: 55px; 
+    background-image: url('../imagens/logo.png'); 
+    background-size: cover; 
+    background-position: center;
+    margin: 0 5px; 
+    vertical-align: middle; 
+}
+
+/* Efeito de linha neon abaixo do título */
+.rastros h1::after {
+    content: '';
+    display: block;
+    width: 100px;
+    height: 2px;
+    background-color: #f5db46;
+    margin: 10px auto 0;
+    box-shadow: 0 0 5px #f5db46, 0 0 10px #f5db46;
+}
+
+/* Ajuste dinâmico para telas menores */
+@media (max-width: 1350px) {
+    .site-title {
+        left: 50%;
+        top: 15%;
+        transform: translate(-50%, -50%);
+    }
+}
+
+/* Estilo para o container de login */
+.login-container {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 350px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Estilo para o conteúdo do formulário */
+.form-container {
+    text-align: center;
+}
+
+.form-container h2 {
+    color: #444;
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.form-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; 
+}
+
+.form-container input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-container input:focus {
+    border-color: #333;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    outline: none;
+}
+
+.form-container button {
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    background-color: #333;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.form-container button:hover {
+    background-color: #555;
+    transform: translateY(-2px);
+}
+
+.form-container p {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.form-container a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.form-container a:hover {
+    color: #555;
+}
+
+/* Estilo para o container das opções de seleção */
+.role-selection {
+    display: flex;
+    justify-content: space-between; 
+    margin-bottom: 15px;
+}
+
+.role-selection label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #333; /* Cor do texto */
+}
+
+/* Estilo para os radio buttons (cor da marcação) */
+input[type="radio"] {
+    accent-color: #ffcc00; /* Cor amarela para a marcação */
+}
+
+/* Estilo para os campos de chave de autenticação */
+#evaluator-fields,
+#student-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Espaçamento entre os campos */
+    margin-bottom: 15px;
+}
+
+/* Container para o campo de código e o checkbox "Exibir" */
+.code-container {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Espaçamento entre o campo de código e o checkbox */
+    margin-bottom: 15px; /* Espaçamento abaixo do container */
+}
+
+.code-container input {
+    flex: 1; /* Faz o campo de código ocupar o espaço disponível */
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.code-container input:focus {
+    border-color: #333;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    outline: none;
+}
+
+/* Estilo para o checkbox "Exibir" */
+.code-container label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #333; /* Cor do texto "Exibir" */
+}
+
+/* Estilo para o campo de e-mail */
+#evaluator-fields input[type="email"] {
+    width: 92%; /* Ocupa a largura total do container */
+    padding: 12px;
+    margin-top: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#evaluator-fields input[type="email"]:focus {
+    border-color: #333;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    outline: none;
+}
+
+/* Estilo para o checkbox (cor da marcação) */
+input[type="checkbox"] {
+    accent-color: #ffcc00;
+}
+
+/* Estilo do rodapé do apoiador */
+.apoiador-footer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    font-size: 14px;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.apoiador-footer:hover {
+    opacity: 1;
+}
+
+.apoiador-footer img {
+    height: 100px;
+    width: auto;
+    filter: grayscale(30%);
+    transition: filter 0.3s;
+}
+
+.apoiador-footer:hover img {
+    filter: grayscale(0%);
+}
+
+@media (max-width: 768px) {
+    .apoiador-footer {
+        position: static;
+        justify-content: center;
+        margin-top: 30px;
+        padding-bottom: 20px;
+    }
+}
+
+/* Estilos do Modal de Termos - Versão Corrigida */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 25px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 700px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.termos-texto {
+    overflow-y: auto;
+    max-height: 60vh;
+    padding: 20px;
+    margin: 10px 0;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    background-color: #ffffff; 
+    font-size: 14px;
+    line-height: 1.7; 
+    color: #333333;
+}
+
+.termos-texto p {
+    margin-bottom: 15px;
+    color: #333333; 
+    text-align: justify;
+}
+
+.termos-texto h3 {
+    margin: 25px 0 15px 0;
+    color: #222222;
+    font-size: 16px;
+    font-weight: 600;
+    border-bottom: 1px solid #eeeeee;
+    padding-bottom: 8px;
+}
+
+/* Lista com marcadores - versão corrigida */
+.termos-lista {
+    margin: 15px 0 25px 15px;
+    padding-left: 5px; 
+    list-style-type: none;
+}
+
+.termos-lista li {
+    margin-bottom: 12px;
+    padding-left: 20px;
+    position: relative;
+    color: #333333; 
+}
+
+.termos-lista li:before {
+    content: "•";
+    color: #333333;
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+    width: 15px;
+}
+
+.termos-alerta {
+    background-color: #fff8e6;
+    padding: 18px;
+    border-left: 4px solid #ffcc00;
+    margin: 25px 0;
+    border-radius: 0 4px 4px 0;
+}
+
+.termos-alerta p {
+    margin: 0;
+    color: #333333;
+    font-weight: 500;
+}
+
+.termos-acordo {
+    margin: 20px 0 15px 0;
+    padding: 15px;
+    background-color: #f8f8f8;
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+}
+
+.termos-acordo label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    color: #333333;
+    font-weight: 500;
+}
+
+
+.modal-botoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-botoes button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+#confirmarTermos {
+    background-color: #333;
+    color: white;
+}
+
+#confirmarTermos:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+#cancelarTermos {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+#cancelarTermos:hover {
+    background-color: #dddddd;
+}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalhes do Grupo</title>
+    <link rel="icon" href="{{ url_for('static', filename='imagens/favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/group_detail.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cronometro.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    
+    <!-- Inclui o menu -->
+    {% include 'menu.html' %}
+
+    <!-- Adiciona o cronômetro -->
+    {% include 'cronometro.html' %}
+
+    <!-- Inclui o JavaScript do cronômetro -->
+    <script src="{{ url_for('static', filename='js/cronometro.js') }}"></script>
+
+    <!-- Banner com imagem de fundo -->
+    <div class="banner"></div>
+
+    <div class="group-detail-container">
+        <!-- Título do Grupo e Ícones -->
+        <div class="group-header">
+            <h1 class="tracking-in-expand">{{ group['name'] }}</h1>
+            <div class="header-icons">
+                <!-- Ícone de pontuação -->
+                <div class="pontuacao-icon" onclick="window.location.href='{{ url_for('pontuacao.pontuacao') }}'">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <!-- Removido o ícone de adicionar membros -->
+                <!-- Removido o ícone de engrenagem -->
+            </div>
+        </div>
+
+        <!-- Membros e Convites Pendentes em uma grade -->
+        <div class="group-content">
+            <!-- Lista de Membros -->
+            <div class="members-section">
+                <h2>Membros</h2>
+                <div class="member-list">
+                    {% if members %}
+                        {% for member in members %}
+                            <div class="member-row">
+                                <div class="member-name">{{ member['username'] }}</div>
+                                <div class="member-status">{{ member['status'] }}</div>
+                                <div class="member-actions">
+                                    <!-- Removido o botão de expulsar membros -->
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="member-row">
+                            <div class="member-name">Sem membros</div>
+                            <div class="member-status"></div>
+                            <div class="member-actions"></div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Lista de Convites Pendentes -->
+            <div class="invitations-section">
+                <h2>Convites Pendentes</h2>
+                <div class="invitation-list">
+                    {% if pending_invitations %}
+                        {% for invitation in pending_invitations | sort(attribute='username') %}
+                            <div class="invitation-row">
+                                <div class="invitation-name">{{ invitation['username'] }}</div>
+                                <div class="invitation-status">{{ invitation['status'] }}</div>
+                                <div class="invitation-actions">
+                                    <!-- Removidos os botões de aceitar/recusar convites -->
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="invitation-row">
+                            <div class="invitation-name">Sem Solicitações</div>
+                            <div class="invitation-status"></div>
+                            <div class="invitation-actions"></div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <a href="{{ url_for('grupos.groups') }}" class="back-link">Voltar aos Grupos</a>
+    </div>
+
+    <!-- Removido o modal de adicionar membros -->
+    
+    <!-- Removido o JavaScript relacionado às funções desativadas -->
+    <script>
+        // Mantido apenas o necessário para outras funcionalidades
+    </script>
+</body>
+</html>

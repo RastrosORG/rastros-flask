@@ -1,0 +1,110 @@
+/* Estilo geral para a página de solicitação de participação */
+body {
+    background-color: #1d1e20;
+    background-image: url('../imagens/na_equipe.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    color: #ffffff;
+    font-family: 'Anonymous Pro', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Container principal */
+.group-request-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Título da página */
+.group-request-container h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #f1f1f1;
+    margin-bottom: 20px;
+    animation: tracking-in-expand 0.7s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+    position: relative;
+}
+
+/* Barra neon embaixo do título */
+.group-request-container h1::after {
+    content: '';
+    display: block;
+    width: 100px;
+    height: 2px;
+    background-color: #f5db46;
+    margin: 10px auto 0;
+    box-shadow: 0 0 5px #f5db46, 0 0 10px #f5db46;
+}
+
+/* Primeira parte da mensagem (em amarelo e maior) */
+.group-request-container p:first-of-type {
+    font-size: 1.5rem;
+    color: #f5db46; /* Amarelo usado no site */
+    margin-bottom: 20px;
+}
+
+/* Parágrafos de texto */
+.group-request-container p {
+    font-size: 1.2rem;
+    color: #f1f1f1;
+    margin-bottom: 20px;
+}
+
+/* Destaque para o nome do grupo */
+.group-name {
+    color: orange;
+    font-weight: bold;
+}
+
+/* Botões */
+.group-request-container button,
+.group-request-container a {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 10px;
+    font-size: 1rem;
+    font-weight: bold; /* Texto em negrito */
+    color: #1d1e20;
+    background-color: #ffee00;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.group-request-container button:hover,
+.group-request-container a:hover {
+    background-color: #ffcc00;
+}
+
+/* Estilo para o botão "Voltar" */
+.back-button {
+    background-color: #444;
+    color: #ffee00;
+}
+
+.back-button:hover {
+    background-color: #555;
+}
+
+/* Animação tracking-in-expand */
+@keyframes tracking-in-expand {
+    0% {
+        letter-spacing: -0.5em;
+        opacity: 0;
+    }
+    40% {
+        opacity: 0.6;
+    }
+    100% {
+        opacity: 1;
+    }
+}

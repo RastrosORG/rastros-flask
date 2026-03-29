@@ -1,0 +1,176 @@
+/* menu.css */
+
+.menu-container {
+    background-color: #15151b;
+    color: #fff;
+    width: 25px;
+    padding: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1;
+    overflow: hidden; /* Remove a rolagem em todos os eixos */
+    scrollbar-width: none; /* Oculta a barra de rolagem no Firefox */
+    -ms-overflow-style: none; /* Oculta a barra de rolagem no IE/Edge */
+}
+
+/* Oculta a barra de rolagem no Chrome, Safari e outros navegadores baseados em WebKit */
+.menu-container::-webkit-scrollbar {
+    display: none;
+}
+
+.menu-container nav {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Remove a rolagem no eixo Y */
+}
+
+.menu-container nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    flex-grow: 1;
+    overflow: hidden; /* Remove a rolagem no eixo Y */
+}
+
+.menu-container nav ul li {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.menu-container nav ul li a {
+    color: #fff;
+    text-decoration: none;
+    display: flex; /* Adicione isso */
+    align-items: center; /* Adicione isso */
+    justify-content: center; /* Adicione isso */
+    text-align: center;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s, transform 0.3s; /* Adicione a propriedade de transformação à transição */
+}
+
+.menu-container nav ul li a:hover,
+.menu-container nav ul li a.active {
+    background-color: #444;
+    color: #ffcc00;
+    transform: scale(1.1); /* Adicione um efeito de escala ao passar o mouse */
+}
+
+.logo-container {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto;
+}
+
+.user-info {
+    margin-top: auto;
+    width: 100%;
+    text-align: center;
+}
+
+.logout-link {
+    padding: 10px;
+    margin-top: 20px;
+    display: block;
+    text-decoration: none;
+    color: #fff;
+    background-color: #444;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.3s; /* Adicione a propriedade de transformação à transição */
+}
+
+/* Ícone de notificações com novas notificações */
+.menu-container nav ul li a.has-notifications i.fa-bell {
+    color: #ff8c42; /* Laranja escuro */
+}
+
+/* Ícone de notificações sem novas notificações */
+.menu-container nav ul li a i.fa-bell {
+    color: #fff; /* Cor normal */
+}
+
+/* Ícone de notificações com novas notificações */
+.menu-container nav ul li a.has-notifications i.fa-bell {
+    color: #ff8c42; /* Laranja escuro */
+}
+
+/* Ícone de notificações ativo (na página de notificações) */
+.menu-container nav ul li a.active i.fa-bell {
+    color: #ffcc00; /* Amarelo */
+}
+
+/* Ícone de notificações ao passar o mouse */
+.menu-container nav ul li a:hover i.fa-bell {
+    color: #ffcc00; /* Amarelo */
+}
+
+/* Ícone de home ativo (na página home ou home-avaliador) */
+.menu-container nav ul li a.active i.fa-home {
+    color: #ffcc00; /* Amarelo */
+}
+
+/* Ícone de home ao passar o mouse */
+.menu-container nav ul li a:hover i.fa-home {
+    color: #ffcc00; /* Amarelo */
+}
+
+.logout-link:hover {
+    background-color: #555;
+    transform: scale(1.1); /* Adicione um efeito de escala ao passar o mouse */
+}
+
+.tooltip {
+    visibility: hidden;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 5px;
+    padding: 5px;
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    white-space: nowrap;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.logout-link:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.content {
+    margin-left: 25px;
+    padding: 20px;
+    width: calc(100% - 250px);
+}
+
+h1 {
+    color: #444;
+    font-size: 32px;
+    font-weight: 600;
+}
+
+p {
+    color: #666;
+    line-height: 1.6;
+}
