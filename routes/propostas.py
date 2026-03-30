@@ -13,7 +13,7 @@ propostas_bp = Blueprint('propostas', __name__)
 @propostas_bp.route('/proposta', methods=['GET', 'POST'])
 def proposta():
     if 'username' not in session or session.get('is_evaluator') != 1:
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     if request.method == 'POST':
         proposta_nome = request.form['proposta_nome']
@@ -22,7 +22,7 @@ def proposta():
 
         if not proposta_nome or not descricao:
             flash('Nome e descrição da proposta são obrigatórios!')
-            return redirect(url_for('proposta'))
+            return redirect(url_for('propostas.proposta'))
 
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -52,13 +52,13 @@ def proposta():
             conn.commit()
             
             flash('Proposta criada com sucesso!')
-            return redirect(url_for('tarefas'),
+            return redirect(url_for('propostas.tarefas'),
                    S3_BUCKET_NAME=os.getenv('S3_BUCKET_NAME'))
         except Exception as e:
             conn.rollback()
             app.logger.error(f"Erro ao criar proposta: {e}")
             flash('Ocorreu um erro ao criar a proposta.')
-            return redirect(url_for('proposta'))
+            return redirect(url_for('propostas.proposta'))
         finally:
             cursor.close()
             conn.close()
@@ -70,7 +70,7 @@ def proposta():
 def tarefas():
     # Verifica se o usuário está logado
     if 'username' not in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     conn = None
     cursor = None
@@ -95,7 +95,7 @@ def tarefas():
                 tempo_restante = max(total_time - tempo_passado, 0)
 
                 if tempo_restante <= 0:
-                    return redirect(url_for('tempo_esgotado'))
+                    return redirect(url_for('cronometro.tempo_esgotado'))
 
         # Consulta as propostas/tarefas
         cursor.execute('''
@@ -123,7 +123,7 @@ def tarefas():
     except Exception as e:
         app.logger.error(f"Erro na rota /tarefas: {e}")
         flash('Ocorreu um erro ao carregar as tarefas')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
     finally:
         if cursor:
             cursor.close()
@@ -135,7 +135,7 @@ def tarefas():
 def aceitar_tarefa(tarefa_id):
     if 'username' not in session:
         flash('Você precisa estar logado para acessar essa página.')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
     
     conn = None
     cursor = None
@@ -150,7 +150,7 @@ def aceitar_tarefa(tarefa_id):
         
         if not usuario or usuario['is_leader'] != 1:
             flash('Você não tem permissão para aceitar esta tarefa.')
-            return redirect(url_for('tarefas'))
+            return redirect(url_for('propostas.tarefas'))
 
         # Verificar se a tarefa existe
         cursor.execute('SELECT * FROM propostas WHERE id = %s', (tarefa_id,))
@@ -158,7 +158,7 @@ def aceitar_tarefa(tarefa_id):
         
         if not tarefa:
             flash('Tarefa não encontrada.')
-            return redirect(url_for('tarefas'))
+            return redirect(url_for('propostas.tarefas'))
 
         grupo_id = usuario['is_group']
 
@@ -184,12 +184,12 @@ def aceitar_tarefa(tarefa_id):
                 app.logger.error(f"Erro ao aceitar tarefa: {e}")
                 flash('Ocorreu um erro ao aceitar a tarefa.')
 
-        return redirect(url_for('tarefas'))
+        return redirect(url_for('propostas.tarefas'))
 
     except Exception as e:
         app.logger.error(f"Erro na rota aceitar_tarefa: {e}")
         flash('Ocorreu um erro no processamento.')
-        return redirect(url_for('tarefas'))
+        return redirect(url_for('propostas.tarefas'))
     finally:
         if cursor:
             cursor.close()
@@ -201,7 +201,7 @@ def aceitar_tarefa(tarefa_id):
 def excluir_tarefa(tarefa_id):
     if 'username' not in session or not session.get('is_evaluator'):
         flash('Acesso não autorizado')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     conn = None
     cursor = None
@@ -215,7 +215,7 @@ def excluir_tarefa(tarefa_id):
 
         if not tarefa:
             flash('Tarefa não encontrada')
-            return redirect(url_for('tarefas'))
+            return redirect(url_for('propostas.tarefas'))
 
         # 1. Primeiro remove todos os arquivos relacionados (proposta e respostas)
         if s3_client and S3_BUCKET_NAME:
@@ -235,7 +235,7 @@ def excluir_tarefa(tarefa_id):
             except Exception as e:
                 app.logger.error(f"Erro ao excluir arquivos do S3: {e}")
                 flash('Erro ao excluir arquivos da tarefa')
-                return redirect(url_for('tarefas'))
+                return redirect(url_for('propostas.tarefas'))
 
         # 2. Remove todas as respostas da tarefa
         cursor.execute('DELETE FROM respostas WHERE tarefa_id = %s', (tarefa_id,))
@@ -260,4 +260,4 @@ def excluir_tarefa(tarefa_id):
         if conn:
             conn.close()
 
-    return redirect(url_for('tarefas'))
+    return redirect(url_for('propostas.tarefas'))

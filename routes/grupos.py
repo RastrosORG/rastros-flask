@@ -15,7 +15,7 @@ def group_request_alt():
 def groups():
     if 'username' not in session:
         flash('Por favor, faça login para acessar esta página.')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     user_id = session['user_id']
     conn = None
@@ -134,7 +134,7 @@ def groups():
 
             conn.commit()
             flash('Grupo criado com sucesso!')
-            return redirect(url_for('groups'))
+            return redirect(url_for('grupos.groups'))
 
         # GET - usuários disponíveis
         cursor.execute(
@@ -175,7 +175,7 @@ def groups():
             conn.rollback()
         app.logger.error(f"Erro na rota /groups: {e}")
         flash('Ocorreu um erro ao processar sua solicitação.')
-        return redirect(url_for('groups'))
+        return redirect(url_for('grupos.groups'))
 
     finally:
         if cursor:
@@ -188,7 +188,7 @@ def groups():
 def delete_group(group_id):
     if 'user_id' not in session:
         flash('Acesso não autorizado. Por favor, faça login.')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     conn = None
     cursor = None
@@ -258,14 +258,14 @@ def delete_group(group_id):
         else:
             flash('Você não tem permissão para excluir este grupo.')
 
-        return redirect(url_for('groups'))
+        return redirect(url_for('grupos.groups'))
 
     except Exception as e:
         if conn:
             conn.rollback()
         app.logger.error(f"Erro ao excluir grupo {group_id}: {e}")
         flash('Ocorreu um erro ao excluir o grupo. Verifique se não há dados dependentes.')
-        return redirect(url_for('groups'))
+        return redirect(url_for('grupos.groups'))
     finally:
         if cursor:
             cursor.close()
@@ -277,7 +277,7 @@ def delete_group(group_id):
 def kick_member(group_id, user_id):
     if 'user_id' not in session:
         flash('Acesso não autorizado. Por favor, faça login.')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     conn = None
     cursor = None
@@ -293,7 +293,7 @@ def kick_member(group_id, user_id):
             # Verifica se o usuário a ser removido não é o próprio criador
             if user_id == session['user_id']:
                 flash('Você não pode remover a si mesmo do grupo. Use a opção de deletar grupo.')
-                return redirect(url_for('group_detail', group_id=group_id))
+                return redirect(url_for('grupos.group_detail', group_id=group_id))
 
             # Remove status de membro do usuário (usando 0 para false)
             cursor.execute('''
@@ -322,14 +322,14 @@ def kick_member(group_id, user_id):
         else:
             flash('Você não tem permissão para remover membros deste grupo.')
 
-        return redirect(url_for('group_detail', group_id=group_id))
+        return redirect(url_for('grupos.group_detail', group_id=group_id))
 
     except Exception as e:
         if conn:
             conn.rollback()
         app.logger.error(f"Erro ao remover membro {user_id} do grupo {group_id}: {e}")
         flash('Ocorreu um erro ao remover o membro do grupo.')
-        return redirect(url_for('group_detail', group_id=group_id))
+        return redirect(url_for('grupos.group_detail', group_id=group_id))
     finally:
         if cursor:
             cursor.close()
@@ -341,7 +341,7 @@ def kick_member(group_id, user_id):
 def leave_group(group_id):
     if 'user_id' not in session:
         flash('Por favor, faça login para realizar esta ação.')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     user_id = session['user_id']
     conn = None
@@ -410,14 +410,14 @@ def leave_group(group_id):
 
         conn.commit()
         flash('Você saiu do grupo com sucesso.')
-        return redirect(url_for('groups'))
+        return redirect(url_for('grupos.groups'))
 
     except Exception as e:
         if conn:
             conn.rollback()
         app.logger.error(f"Erro ao sair do grupo {group_id}: {e}")
         flash('Ocorreu um erro ao sair do grupo.')
-        return redirect(url_for('groups'))
+        return redirect(url_for('grupos.groups'))
     finally:
         if cursor:
             cursor.close()
@@ -428,7 +428,7 @@ def leave_group(group_id):
 def group_detail(group_id):
     if 'username' not in session:
         flash('Por favor, faça login para visualizar este grupo.')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     conn = None
     cursor = None
@@ -442,7 +442,7 @@ def group_detail(group_id):
         
         if group is None:
             flash('Grupo não encontrado.')
-            return redirect(url_for('groups'))
+            return redirect(url_for('grupos.groups'))
 
         # Obtém informações do usuário logado
         cursor.execute('SELECT * FROM users WHERE username = %s', (session['username'],))
@@ -474,7 +474,7 @@ def group_detail(group_id):
         if current_user_status is None:
             if is_group_full:
                 flash('Este grupo já está cheio.')
-                return redirect(url_for('groups'))
+                return redirect(url_for('grupos.groups'))
             else:
                 cursor.execute('SELECT created_by FROM groups WHERE id = %s', (group_id,))
                 leader = cursor.fetchone()
@@ -516,7 +516,7 @@ def group_detail(group_id):
     except Exception as e:
         app.logger.error(f"Erro ao carregar detalhes do grupo {group_id}: {e}")
         flash('Ocorreu um erro ao carregar o grupo.')
-        return redirect(url_for('groups'))
+        return redirect(url_for('grupos.groups'))
     finally:
         if cursor:
             cursor.close()
@@ -527,7 +527,7 @@ def group_detail(group_id):
 def request_group_invitation(group_id):
     if 'username' not in session:
         flash('Por favor, faça login para solicitar entrada no grupo.')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     conn = None
     cursor = None
@@ -541,11 +541,11 @@ def request_group_invitation(group_id):
         
         if not user:
             flash('Usuário não encontrado.')
-            return redirect(url_for('groups'))
+            return redirect(url_for('grupos.groups'))
 
         if user['is_group'] and user['is_group'] != 'none':
             flash('Você já faz parte de um grupo e não pode solicitar entrada em outro.')
-            return redirect(url_for('groups'))
+            return redirect(url_for('grupos.groups'))
 
         # Verifica se já existe uma solicitação pendente
         cursor.execute('''
@@ -556,7 +556,7 @@ def request_group_invitation(group_id):
 
         if existing_request:
             flash('Você já possui uma solicitação pendente para este grupo.')
-            return redirect(url_for('groups'))
+            return redirect(url_for('grupos.groups'))
 
         # Adiciona solicitação ao grupo
         cursor.execute('''
@@ -581,14 +581,14 @@ def request_group_invitation(group_id):
 
         conn.commit()
         flash('Solicitação enviada. Aguarde a aprovação do líder do grupo.')
-        return redirect(url_for('groups'))
+        return redirect(url_for('grupos.groups'))
 
     except Exception as e:
         if conn:
             conn.rollback()
         app.logger.error(f"Erro ao solicitar entrada no grupo {group_id}: {e}")
         flash('Ocorreu um erro ao enviar sua solicitação.')
-        return redirect(url_for('groups'))
+        return redirect(url_for('grupos.groups'))
     finally:
         if cursor:
             cursor.close()
@@ -758,7 +758,7 @@ def add_members(group_id):
 def add_member_request(group_id, user_id):
     if 'username' not in session:
         flash('Acesso não autorizado. Por favor, faça login.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     conn = None
     cursor = None
@@ -774,7 +774,7 @@ def add_member_request(group_id, user_id):
         
         if not group_owner or group_owner['created_by'] != session['user_id']:
             flash('Você não tem permissão para aceitar membros neste grupo.', 'error')
-            return redirect(url_for('group_detail', group_id=group_id))
+            return redirect(url_for('grupos.group_detail', group_id=group_id))
 
         # Verifica se o grupo está cheio (1 líder + 3 membros)
         cursor.execute('''
@@ -785,7 +785,7 @@ def add_member_request(group_id, user_id):
         
         if member_count >= 4:
             flash('O grupo já está cheio (máximo de 4 membros).', 'error')
-            return redirect(url_for('group_detail', group_id=group_id))
+            return redirect(url_for('grupos.group_detail', group_id=group_id))
 
         # Atualiza o status do usuário
         cursor.execute('''
@@ -833,13 +833,13 @@ def add_member_request(group_id, user_id):
         if conn:
             conn.close()
 
-    return redirect(url_for('group_detail', group_id=group_id))
+    return redirect(url_for('grupos.group_detail', group_id=group_id))
 
 @grupos_bp.route('/groups/<int:group_id>/reject/<int:user_id>', methods=['POST'])
 def recusar_member_request(group_id, user_id):
     if 'username' not in session:
         flash('Acesso não autorizado. Por favor, faça login.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     conn = None
     cursor = None
@@ -853,7 +853,7 @@ def recusar_member_request(group_id, user_id):
         
         if not group_owner or group_owner['created_by'] != session['user_id']:
             flash('Você não tem permissão para recusar membros neste grupo.', 'error')
-            return redirect(url_for('group_detail', group_id=group_id))
+            return redirect(url_for('grupos.group_detail', group_id=group_id))
 
         # Verifica se o usuário existe no grupo
         cursor.execute('''
@@ -864,7 +864,7 @@ def recusar_member_request(group_id, user_id):
 
         if not member_status:
             flash('Usuário não encontrado neste grupo.', 'error')
-            return redirect(url_for('group_detail', group_id=group_id))
+            return redirect(url_for('grupos.group_detail', group_id=group_id))
 
         # Remove o usuário do grupo
         cursor.execute('''
@@ -909,4 +909,4 @@ def recusar_member_request(group_id, user_id):
         if conn:
             conn.close()
 
-    return redirect(url_for('group_detail', group_id=group_id))
+    return redirect(url_for('grupos.group_detail', group_id=group_id))

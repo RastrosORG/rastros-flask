@@ -29,14 +29,14 @@ def avaliar_respostas():
         # Verificar autenticação e permissões (mantendo 1/0 para booleanos)
         if not user_id:
             flash('Erro: Usuário não está autenticado.', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('auth.index'))
 
         cursor.execute('SELECT is_evaluator FROM users WHERE id = %s', (user_id,))
         user_data = cursor.fetchone()
         
         if not user_data or user_data['is_evaluator'] == 0:
             flash('Erro: Apenas avaliadores podem acessar esta página.', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('auth.index'))
 
         # Buscar categorias de pontuação
         cursor.execute('SELECT id, categoria, valor, detalhes FROM base_pontos')
@@ -131,7 +131,7 @@ def avaliar_respostas():
 
                 conn.commit()
                 flash('Avaliação registrada com sucesso!', 'success')
-                return redirect(url_for('avaliar_respostas', proposta_id=proposta_id, grupo_id=grupo_id))
+                return redirect(url_for('avaliar.avaliar_respostas', proposta_id=proposta_id, grupo_id=grupo_id))
 
         # Restante do código permanece igual...
         # Fluxo GET - Navegação hierárquica (mantendo comparações com 1/0)
@@ -219,7 +219,7 @@ def avaliar_respostas():
             conn.rollback()
         app.logger.error(f"Erro em avaliar_respostas: {e}")
         flash('Ocorreu um erro ao processar sua solicitação.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
     finally:
         if cursor:
             cursor.close()
@@ -356,7 +356,7 @@ def excluir_resposta(resposta_id):
 @avaliar_bp.route('/favoritos')
 def favoritos():
     if 'user_id' not in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
     
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -368,7 +368,7 @@ def favoritos():
         user = cursor.fetchone()
         
         if not user or user['is_evaluator'] != 1:
-            return redirect(url_for('index'))
+            return redirect(url_for('auth.index'))
         
         cursor.execute('''
             SELECT 

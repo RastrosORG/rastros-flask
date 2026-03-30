@@ -22,7 +22,7 @@ pontuacao_bp = Blueprint('pontuacao', __name__)
 def pontuacao():
     if 'user_id' not in session:
         flash('Por favor, faça login para acessar esta página.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     conn = None
     cursor = None
@@ -37,7 +37,7 @@ def pontuacao():
         
         if not user_data or user_data['is_group'] == 'none':
             flash('Você precisa estar em um grupo para ver pontuações.', 'error')
-            return redirect(url_for('group_request_alt'))
+            return redirect(url_for('grupos.group_request_alt'))
 
         grupo_id = user_data['is_group']
 
@@ -92,7 +92,7 @@ def pontuacao():
     except Exception as e:
         app.logger.error(f"Erro na rota pontuacao: {e}")
         flash('Ocorreu um erro ao carregar as pontuações.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
     finally:
         if cursor:
             cursor.close()
@@ -104,7 +104,7 @@ def pontuacao_avaliador():
     # Verificação de autenticação
     if 'user_id' not in session:
         flash('Por favor, faça login para acessar esta página.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     conn = None
     cursor = None
@@ -119,7 +119,7 @@ def pontuacao_avaliador():
         
         if not user_data or user_data['is_evaluator'] == 0:
             flash('Acesso restrito a avaliadores.', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('auth.index'))
 
         # Busca todas as propostas (tarefas)
         cursor.execute('SELECT id, nome, descricao FROM propostas')
@@ -136,7 +136,7 @@ def pontuacao_avaliador():
     except Exception as e:
         app.logger.error(f"Erro em pontuacao_avaliador: {e}")
         flash('Ocorreu um erro ao carregar as propostas.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
     finally:
         if cursor:
             cursor.close()

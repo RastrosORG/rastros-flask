@@ -42,7 +42,7 @@ def graficos():
     except Exception as e:
         app.logger.error(f"Erro ao gerar gráficos: {e}")
         flash('Ocorreu um erro ao carregar os dados dos gráficos.')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
     finally:
         if cursor:
             cursor.close()

@@ -11,7 +11,7 @@ notificacoes_bp = Blueprint('notificacoes', __name__)
 def notificacoes():
     if 'username' not in session:
         flash('Por favor, faça login para acessar suas notificações.')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
     
     conn = None
     cursor = None
@@ -45,7 +45,7 @@ def notificacoes():
     except Exception as e:
         app.logger.error(f"Erro ao carregar notificações: {e}")
         flash('Ocorreu um erro ao carregar suas notificações.')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
     finally:
         if cursor:
             cursor.close()
@@ -66,7 +66,7 @@ def accept_member_request(notification_id):
 
         if notification is None:
             flash('Notificação não encontrada.')
-            return redirect(url_for('notificacoes'))
+            return redirect(url_for('notificacoes.notificacoes'))
 
         user_id = notification['user_id']
         group_id = notification['group_id']
@@ -77,7 +77,7 @@ def accept_member_request(notification_id):
         
         if group is None:
             flash('Grupo não encontrado.')
-            return redirect(url_for('notificacoes'))
+            return redirect(url_for('notificacoes.notificacoes'))
 
         group_name = group['name']
 
@@ -87,7 +87,7 @@ def accept_member_request(notification_id):
         
         if user is None:
             flash('Usuário não encontrado.')
-            return redirect(url_for('notificacoes'))
+            return redirect(url_for('notificacoes.notificacoes'))
 
         if user['is_group'] is not None and str(user['is_group']).lower() != 'none':
             # Usuário já em um grupo - cria notificação
@@ -104,7 +104,7 @@ def accept_member_request(notification_id):
             
             conn.commit()
             flash('Você já faz parte de um grupo e não pode aceitar novos convites.')
-            return redirect(url_for('notificacoes'))
+            return redirect(url_for('notificacoes.notificacoes'))
 
         # Verifica se o grupo está cheio (1 líder + 3 membros)
         cursor.execute('''
@@ -133,7 +133,7 @@ def accept_member_request(notification_id):
 
             conn.commit()
             flash('O grupo está cheio. Você não pôde ser adicionado.')
-            return redirect(url_for('notificacoes'))
+            return redirect(url_for('notificacoes.notificacoes'))
 
         # Verifica se usuário já é membro do grupo
         cursor.execute('''
@@ -183,14 +183,14 @@ def accept_member_request(notification_id):
 
         conn.commit()
         flash('Solicitação aceita e usuário adicionado ao grupo.')
-        return redirect(url_for('notificacoes'))
+        return redirect(url_for('notificacoes.notificacoes'))
 
     except Exception as e:
         if conn:
             conn.rollback()
         app.logger.error(f"Erro ao processar aceitação de convite: {e}")
         flash('Ocorreu um erro ao processar sua solicitação.')
-        return redirect(url_for('notificacoes'))
+        return redirect(url_for('notificacoes.notificacoes'))
     finally:
         if cursor:
             cursor.close()
@@ -211,7 +211,7 @@ def reject_member_request(notification_id):
 
         if not notification:
             flash('Notificação não encontrada.')
-            return redirect(url_for('notificacoes'))
+            return redirect(url_for('notificacoes.notificacoes'))
 
         user_id = notification['user_id']
         group_id = notification['group_id']
@@ -241,14 +241,14 @@ def reject_member_request(notification_id):
 
         conn.commit()
         flash('Solicitação recusada com sucesso.')
-        return redirect(url_for('notificacoes'))
+        return redirect(url_for('notificacoes.notificacoes'))
 
     except Exception as e:
         if conn:
             conn.rollback()
         app.logger.error(f"Erro ao rejeitar solicitação: {e}")
         flash('Ocorreu um erro ao processar a recusa.')
-        return redirect(url_for('notificacoes'))
+        return redirect(url_for('notificacoes.notificacoes'))
     finally:
         if cursor:
             cursor.close()
@@ -270,7 +270,7 @@ def delete_notification(notification_id):
 
         if not notification:
             flash('Notificação não encontrada.')
-            return redirect(url_for('notificacoes'))
+            return redirect(url_for('notificacoes.notificacoes'))
 
         user_id = notification['user_id']
         group_id = notification['group_id']
@@ -296,14 +296,14 @@ def delete_notification(notification_id):
 
         conn.commit()
         flash('Notificação removida com sucesso.')
-        return redirect(url_for('notificacoes'))
+        return redirect(url_for('notificacoes.notificacoes'))
 
     except Exception as e:
         if conn:
             conn.rollback()
         app.logger.error(f"Erro ao excluir notificação: {e}")
         flash('Ocorreu um erro ao excluir a notificação.')
-        return redirect(url_for('notificacoes'))
+        return redirect(url_for('notificacoes.notificacoes'))
     finally:
         if cursor:
             cursor.close()

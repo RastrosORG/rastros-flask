@@ -13,7 +13,7 @@ respostas_bp = Blueprint('respostas', __name__)
 def resposta():
     # Verifica se o usuário está logado
     if 'username' not in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
 
     conn = None
     cursor = None
@@ -37,24 +37,24 @@ def resposta():
                 tempo_restante = max(total_time - tempo_passado, 0)
 
                 if tempo_restante <= 0:
-                    return redirect(url_for('tempo_esgotado'))
+                    return redirect(url_for('cronometro.tempo_esgotado'))
 
         # Obtém o usuário logado
         user_id = session.get('user_id')
         if not user_id:
-            return redirect(url_for('index'))
+            return redirect(url_for('auth.index'))
 
         # Obtém informações do grupo do usuário
         cursor.execute('SELECT is_group FROM users WHERE id = %s', (user_id,))
         user_data = cursor.fetchone()
 
         if not user_data or not user_data['is_group']:
-            return redirect(url_for('group_request_alt'))
+            return redirect(url_for('grupos.group_request_alt'))
 
         try:
             user_group = int(user_data['is_group'])
         except ValueError:
-            return redirect(url_for('group_request_alt'))
+            return redirect(url_for('grupos.group_request_alt'))
 
         # Consulta as propostas aceitas pelo grupo
         cursor.execute('''
@@ -82,7 +82,7 @@ def resposta():
     except Exception as e:
         app.logger.error(f"Erro na rota /resposta: {e}")
         flash('Ocorreu um erro ao carregar a página de resposta')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
     finally:
         if cursor:
             cursor.close()
@@ -100,7 +100,7 @@ def enviar_resposta():
 
         if not user_id:
             flash('Erro: Usuário não está autenticado.')
-            return redirect(url_for('index'))
+            return redirect(url_for('auth.index'))
 
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cursor.execute('SELECT is_group FROM users WHERE id = %s', (user_id,))
@@ -108,13 +108,13 @@ def enviar_resposta():
         
         if not user_data or not user_data['is_group']:
             flash('Erro: Usuário não pertence a um grupo.')
-            return redirect(url_for('group_request_alt'))
+            return redirect(url_for('grupos.group_request_alt'))
 
         try:
             user_group = int(user_data['is_group'])
         except ValueError:
             flash('Erro: ID do grupo no formato inválido.')
-            return redirect(url_for('group_request_alt'))
+            return redirect(url_for('grupos.group_request_alt'))
 
         proposta_id = request.form['proposta']
         categoria = request.form.get('categorias')
@@ -125,7 +125,7 @@ def enviar_resposta():
 
         if not arquivos:
             flash('Erro: Nenhum arquivo foi enviado.')
-            return redirect(url_for('resposta'))
+            return redirect(url_for('respostas.resposta'))
 
         cursor.execute(
             '''INSERT INTO respostas 
@@ -155,14 +155,14 @@ def enviar_resposta():
         conn.commit()
 
         flash('Resposta enviada com sucesso!')
-        return redirect(url_for('respostas_enviadas'))
+        return redirect(url_for('respostas.respostas_enviadas'))
 
     except Exception as e:
         if conn:
             conn.rollback()
         app.logger.error(f"Erro ao enviar resposta: {e}")
         flash('Ocorreu um erro ao enviar sua resposta. Por favor, tente novamente.')
-        return redirect(url_for('resposta'))
+        return redirect(url_for('respostas.resposta'))
     finally:
         if cursor:
             cursor.close()
@@ -180,20 +180,20 @@ def respostas_enviadas():
 
         if not user_id:
             flash('Erro: Usuário não está autenticado.')
-            return redirect(url_for('index'))
+            return redirect(url_for('auth.index'))
 
         cursor.execute('SELECT is_group FROM users WHERE id = %s', (user_id,))
         user_data = cursor.fetchone()
         
         if not user_data or not user_data['is_group']:
             flash('Erro: Usuário não pertence a um grupo.')
-            return redirect(url_for('group_request_alt'))
+            return redirect(url_for('grupos.group_request_alt'))
 
         try:
             user_group = int(user_data['is_group'])
         except ValueError:
             flash('Erro: ID do grupo no formato inválido.')
-            return redirect(url_for('group_request_alt'))
+            return redirect(url_for('grupos.group_request_alt'))
 
         cursor.execute('''
             SELECT r.*, p.nome AS proposta_nome, p.id AS proposta_id
@@ -238,7 +238,7 @@ def respostas_enviadas():
     except Exception as e:
         app.logger.error(f"Erro na rota respostas_enviadas: {e}")
         flash('Ocorreu um erro ao carregar as respostas enviadas.')
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.index'))
     finally:
         if cursor:
             cursor.close()
