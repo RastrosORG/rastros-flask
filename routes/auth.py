@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 import hashlib
 import psycopg2.extras
 
@@ -39,7 +39,7 @@ def index():
                 return render_template('index.html', error='Usuário ou senha incorretos.')
         
         except Exception as e:
-            app.logger.error(f"Erro durante o login: {e}")
+            current_app.logger.error(f"Erro durante o login: {e}")
             return render_template('index.html', error='Ocorreu um erro durante o login. Tente novamente.')
         
         finally:
@@ -113,18 +113,18 @@ def signup():
             )
             conn.commit()
             flash('Cadastro realizado com sucesso! Faça login para continuar.')
-            return redirect(url_for('index'))
+            return redirect(url_for('auth.index'))
         
         except psycopg2.errors.UniqueViolation:
             return render_template('index.html', error='Usuário já existe.')
         
         except Exception as e:
             conn.rollback()
-            app.logger.error(f"Erro ao cadastrar usuário: {e}")
+            current_app.logger.error(f"Erro ao cadastrar usuário: {e}")
             return render_template('index.html', error='Ocorreu um erro ao cadastrar. Tente novamente.')
 
     except Exception as e:
-        app.logger.error(f"Erro no processo de cadastro: {e}")
+        current_app.logger.error(f"Erro no processo de cadastro: {e}")
         return render_template('index.html', error='Ocorreu um erro no processamento.')
     
     finally:
@@ -172,7 +172,7 @@ def login():
             return render_template('index.html', error='Usuário ou senha incorretos.')
 
     except Exception as e:
-        app.logger.error(f"Erro durante o login: {e}")
+        current_app.logger.error(f"Erro durante o login: {e}")
         return render_template('index.html', error='Ocorreu um erro durante o login. Tente novamente.')
     finally:
         if cursor:
@@ -184,4 +184,4 @@ def login():
 def logout():
     session.pop('username', None)
     session.pop('user_id', None)
-    return redirect(url_for('index'))
+    return redirect(url_for('auth.index'))
