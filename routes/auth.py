@@ -32,9 +32,9 @@ def index():
                 
                 # Redireciona com base em 'is_evaluator'
                 if user['is_evaluator'] == 1:
-                    return redirect(url_for('home_avaliador'))
+                    return redirect(url_for('home.home_avaliador'))
                 else:
-                    return redirect(url_for('home'))
+                    return redirect(url_for('home.home'))
             else:
                 return render_template('index.html', error='Usuário ou senha incorretos.')
         
@@ -166,8 +166,8 @@ def login():
             
             # Redirecionar conforme o tipo de usuário
             if user['is_evaluator']:
-                return redirect(url_for('home_avaliador'))
-            return redirect(url_for('home'))
+                return redirect(url_for('home.home_avaliador'))
+            return redirect(url_for('home.home'))
         else:
             return render_template('index.html', error='Usuário ou senha incorretos.')
 
