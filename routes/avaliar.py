@@ -6,7 +6,8 @@ from flask import (
     redirect,
     url_for,
     flash,
-    jsonify
+    jsonify,
+    current_app
 )
 
 from services.database import get_db_connection
@@ -201,9 +202,9 @@ def avaliar_respostas():
                     Prefix=prefix
                 )
                 arquivos = [obj['Key'].split('/')[-1] for obj in response.get('Contents', [])]
-                app.logger.debug(f"Arquivos encontrados no S3: {arquivos}")
+                current_app.logger.debug(f"Arquivos encontrados no S3: {arquivos}")
             except Exception as e:
-                app.logger.error(f"Erro ao listar arquivos no S3: {e}")
+                current_app.logger.error(f"Erro ao listar arquivos no S3: {e}")
                 arquivos = []
 
         return render_template('avaliar_respostas.html',
@@ -217,7 +218,7 @@ def avaliar_respostas():
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro em avaliar_respostas: {e}")
+        current_app.logger.error(f"Erro em avaliar_respostas: {e}")
         flash('Ocorreu um erro ao processar sua solicitação.', 'error')
         return redirect(url_for('auth.index'))
     finally:
@@ -264,7 +265,7 @@ def marcar_favorito(resposta_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao marcar favorito: {e}")
+        current_app.logger.error(f"Erro ao marcar favorito: {e}")
         return jsonify({'success': False, 'error': 'Erro interno no servidor'}), 500
     finally:
         if cursor:
@@ -312,14 +313,14 @@ def excluir_resposta(resposta_id):
                 
                 # Remove todos os objetos da pasta da resposta
                 if objects_to_delete:
-                    app.logger.info(f"Removendo {len(objects_to_delete)} arquivos do S3 para resposta {resposta_id}")
+                    current_app.logger.info(f"Removendo {len(objects_to_delete)} arquivos do S3 para resposta {resposta_id}")
                     s3_client.delete_objects(
                         Bucket=S3_BUCKET_NAME,
                         Delete={'Objects': objects_to_delete}
                     )
                     
             except Exception as e:
-                app.logger.error(f"Erro ao remover arquivos do S3: {e}")
+                current_app.logger.error(f"Erro ao remover arquivos do S3: {e}")
                 return jsonify({
                     'success': False,
                     'message': 'Erro ao remover arquivos da resposta no S3'
@@ -341,7 +342,7 @@ def excluir_resposta(resposta_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao excluir resposta {resposta_id}: {e}")
+        current_app.logger.error(f"Erro ao excluir resposta {resposta_id}: {e}")
         return jsonify({
             'success': False,
             'message': 'Ocorreu um erro ao excluir a resposta'
@@ -428,7 +429,7 @@ def favoritos():
         )
         
     except Exception as e:
-        app.logger.error(f"Erro ao buscar favoritos: {str(e)}", exc_info=True)
+        current_app.logger.error(f"Erro ao buscar favoritos: {str(e)}", exc_info=True)
         return f"Erro ao carregar respostas favoritas: {str(e)}", 500
     finally:
         cursor.close()

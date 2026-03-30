@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 import psycopg2.extras
 
 from services.database import get_db_connection
@@ -173,7 +173,7 @@ def groups():
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro na rota /groups: {e}")
+        current_app.logger.error(f"Erro na rota /groups: {e}")
         flash('Ocorreu um erro ao processar sua solicitação.')
         return redirect(url_for('grupos.groups'))
 
@@ -223,13 +223,13 @@ def delete_group(group_id):
                         
                         # Remove todos os objetos da pasta da resposta
                         if objects_to_delete:
-                            app.logger.info(f"Removendo {len(objects_to_delete)} arquivos do S3 para resposta {resposta['id']}")
+                            current_app.logger.info(f"Removendo {len(objects_to_delete)} arquivos do S3 para resposta {resposta['id']}")
                             s3_client.delete_objects(
                                 Bucket=S3_BUCKET_NAME,
                                 Delete={'Objects': objects_to_delete}
                             )
                     except Exception as e:
-                        app.logger.error(f"Erro ao remover arquivos da resposta {resposta['id']} no S3: {e}")
+                        current_app.logger.error(f"Erro ao remover arquivos da resposta {resposta['id']} no S3: {e}")
                         continue
             
             cursor.execute('DELETE FROM respostas WHERE grupo_id = %s', (group_id,))
@@ -263,7 +263,7 @@ def delete_group(group_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao excluir grupo {group_id}: {e}")
+        current_app.logger.error(f"Erro ao excluir grupo {group_id}: {e}")
         flash('Ocorreu um erro ao excluir o grupo. Verifique se não há dados dependentes.')
         return redirect(url_for('grupos.groups'))
     finally:
@@ -327,7 +327,7 @@ def kick_member(group_id, user_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao remover membro {user_id} do grupo {group_id}: {e}")
+        current_app.logger.error(f"Erro ao remover membro {user_id} do grupo {group_id}: {e}")
         flash('Ocorreu um erro ao remover o membro do grupo.')
         return redirect(url_for('grupos.group_detail', group_id=group_id))
     finally:
@@ -415,7 +415,7 @@ def leave_group(group_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao sair do grupo {group_id}: {e}")
+        current_app.logger.error(f"Erro ao sair do grupo {group_id}: {e}")
         flash('Ocorreu um erro ao sair do grupo.')
         return redirect(url_for('grupos.groups'))
     finally:
@@ -514,7 +514,7 @@ def group_detail(group_id):
                             is_group_full=is_group_full)
 
     except Exception as e:
-        app.logger.error(f"Erro ao carregar detalhes do grupo {group_id}: {e}")
+        current_app.logger.error(f"Erro ao carregar detalhes do grupo {group_id}: {e}")
         flash('Ocorreu um erro ao carregar o grupo.')
         return redirect(url_for('grupos.groups'))
     finally:
@@ -586,7 +586,7 @@ def request_group_invitation(group_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao solicitar entrada no grupo {group_id}: {e}")
+        current_app.logger.error(f"Erro ao solicitar entrada no grupo {group_id}: {e}")
         flash('Ocorreu um erro ao enviar sua solicitação.')
         return redirect(url_for('grupos.groups'))
     finally:
@@ -742,7 +742,7 @@ def add_members(group_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao adicionar membros ao grupo {group_id}: {e}")
+        current_app.logger.error(f"Erro ao adicionar membros ao grupo {group_id}: {e}")
         return jsonify({
             'success': False,
             'error': 'Ocorreu um erro ao enviar os convites',
@@ -826,7 +826,7 @@ def add_member_request(group_id, user_id):
         if conn:
             conn.rollback()
         flash('Ocorreu um erro ao processar a solicitação.', 'error')
-        app.logger.error(f"Erro ao aceitar usuário {user_id} no grupo {group_id}: {e}")
+        current_app.logger.error(f"Erro ao aceitar usuário {user_id} no grupo {group_id}: {e}")
     finally:
         if cursor:
             cursor.close()
@@ -902,7 +902,7 @@ def recusar_member_request(group_id, user_id):
         if conn:
             conn.rollback()
         flash('Ocorreu um erro ao processar a recusa.', 'error')
-        app.logger.error(f"Erro ao recusar usuário {user_id} no grupo {group_id}: {e}")
+        current_app.logger.error(f"Erro ao recusar usuário {user_id} no grupo {group_id}: {e}")
     finally:
         if cursor:
             cursor.close()

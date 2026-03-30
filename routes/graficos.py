@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, redirect, url_for, flash, current_app
 import psycopg2.extras
 
 from services.database import get_db_connection
@@ -40,7 +40,7 @@ def graficos():
                             respostas=grupos_respostas)
 
     except Exception as e:
-        app.logger.error(f"Erro ao gerar gráficos: {e}")
+        current_app.logger.error(f"Erro ao gerar gráficos: {e}")
         flash('Ocorreu um erro ao carregar os dados dos gráficos.')
         return redirect(url_for('auth.index'))
     finally:

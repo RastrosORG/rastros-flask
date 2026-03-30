@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 from werkzeug.utils import secure_filename
 import psycopg2.extras
 
@@ -56,7 +56,7 @@ def proposta():
                    S3_BUCKET_NAME=os.getenv('S3_BUCKET_NAME'))
         except Exception as e:
             conn.rollback()
-            app.logger.error(f"Erro ao criar proposta: {e}")
+            current_app.logger.error(f"Erro ao criar proposta: {e}")
             flash('Ocorreu um erro ao criar a proposta.')
             return redirect(url_for('propostas.proposta'))
         finally:
@@ -121,7 +121,7 @@ def tarefas():
                             S3_BUCKET_NAME=os.getenv('S3_BUCKET_NAME'))
 
     except Exception as e:
-        app.logger.error(f"Erro na rota /tarefas: {e}")
+        current_app.logger.error(f"Erro na rota /tarefas: {e}")
         flash('Ocorreu um erro ao carregar as tarefas')
         return redirect(url_for('auth.index'))
     finally:
@@ -181,13 +181,13 @@ def aceitar_tarefa(tarefa_id):
                 flash('Tarefa aceita com sucesso!')
             except Exception as e:
                 conn.rollback()
-                app.logger.error(f"Erro ao aceitar tarefa: {e}")
+                current_app.logger.error(f"Erro ao aceitar tarefa: {e}")
                 flash('Ocorreu um erro ao aceitar a tarefa.')
 
         return redirect(url_for('propostas.tarefas'))
 
     except Exception as e:
-        app.logger.error(f"Erro na rota aceitar_tarefa: {e}")
+        current_app.logger.error(f"Erro na rota aceitar_tarefa: {e}")
         flash('Ocorreu um erro no processamento.')
         return redirect(url_for('propostas.tarefas'))
     finally:
@@ -233,7 +233,7 @@ def excluir_tarefa(tarefa_id):
                     delete_s3_prefix(resposta_prefix)
                     
             except Exception as e:
-                app.logger.error(f"Erro ao excluir arquivos do S3: {e}")
+                current_app.logger.error(f"Erro ao excluir arquivos do S3: {e}")
                 flash('Erro ao excluir arquivos da tarefa')
                 return redirect(url_for('propostas.tarefas'))
 
@@ -252,7 +252,7 @@ def excluir_tarefa(tarefa_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao excluir tarefa {tarefa_id}: {e}")
+        current_app.logger.error(f"Erro ao excluir tarefa {tarefa_id}: {e}")
         flash('Ocorreu um erro durante a exclusão')
     finally:
         if cursor:

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 from werkzeug.utils import secure_filename
 import psycopg2.extras
 
@@ -80,7 +80,7 @@ def resposta():
         )
 
     except Exception as e:
-        app.logger.error(f"Erro na rota /resposta: {e}")
+        current_app.logger.error(f"Erro na rota /resposta: {e}")
         flash('Ocorreu um erro ao carregar a página de resposta')
         return redirect(url_for('auth.index'))
     finally:
@@ -160,7 +160,7 @@ def enviar_resposta():
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao enviar resposta: {e}")
+        current_app.logger.error(f"Erro ao enviar resposta: {e}")
         flash('Ocorreu um erro ao enviar sua resposta. Por favor, tente novamente.')
         return redirect(url_for('respostas.resposta'))
     finally:
@@ -236,7 +236,7 @@ def respostas_enviadas():
         )
 
     except Exception as e:
-        app.logger.error(f"Erro na rota respostas_enviadas: {e}")
+        current_app.logger.error(f"Erro na rota respostas_enviadas: {e}")
         flash('Ocorreu um erro ao carregar as respostas enviadas.')
         return redirect(url_for('auth.index'))
     finally:

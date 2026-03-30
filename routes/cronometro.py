@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, render_template
+from flask import Blueprint, request, jsonify, render_template, current_app
 from datetime import datetime
 import psycopg2.extras
 
@@ -31,7 +31,7 @@ def iniciar_cronometro():
         return jsonify({'mensagem': 'Cronômetro iniciado'}), 200
     except Exception as e:
         conn.rollback()
-        app.logger.error(f"Erro ao iniciar cronômetro: {e}")
+        current_app.logger.error(f"Erro ao iniciar cronômetro: {e}")
         return jsonify({'erro': 'Falha ao iniciar cronômetro'}), 500
     finally:
         cursor.close()
@@ -56,7 +56,7 @@ def tempo_restante():
 
         return jsonify({'tempo_restante': tempo_restante})
     except Exception as e:
-        app.logger.error(f"Erro ao verificar tempo restante: {e}")
+        current_app.logger.error(f"Erro ao verificar tempo restante: {e}")
         return jsonify({'erro': 'Falha ao verificar tempo restante'}), 500
     finally:
         cursor.close()

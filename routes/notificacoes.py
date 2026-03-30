@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, session, flash, jsonify
+from flask import Blueprint, render_template, redirect, url_for, session, flash, jsonify, current_app
 import psycopg2.extras
 
 from services.database import get_db_connection
@@ -43,7 +43,7 @@ def notificacoes():
         return render_template('notificacoes.html', notifications=notifications)
 
     except Exception as e:
-        app.logger.error(f"Erro ao carregar notificações: {e}")
+        current_app.logger.error(f"Erro ao carregar notificações: {e}")
         flash('Ocorreu um erro ao carregar suas notificações.')
         return redirect(url_for('auth.index'))
     finally:
@@ -188,7 +188,7 @@ def accept_member_request(notification_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao processar aceitação de convite: {e}")
+        current_app.logger.error(f"Erro ao processar aceitação de convite: {e}")
         flash('Ocorreu um erro ao processar sua solicitação.')
         return redirect(url_for('notificacoes.notificacoes'))
     finally:
@@ -246,7 +246,7 @@ def reject_member_request(notification_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao rejeitar solicitação: {e}")
+        current_app.logger.error(f"Erro ao rejeitar solicitação: {e}")
         flash('Ocorreu um erro ao processar a recusa.')
         return redirect(url_for('notificacoes.notificacoes'))
     finally:
@@ -301,7 +301,7 @@ def delete_notification(notification_id):
     except Exception as e:
         if conn:
             conn.rollback()
-        app.logger.error(f"Erro ao excluir notificação: {e}")
+        current_app.logger.error(f"Erro ao excluir notificação: {e}")
         flash('Ocorreu um erro ao excluir a notificação.')
         return redirect(url_for('notificacoes.notificacoes'))
     finally:
@@ -335,7 +335,7 @@ def verificar_notificacoes():
         })
 
     except Exception as e:
-        app.logger.error(f"Erro ao verificar notificações: {e}")
+        current_app.logger.error(f"Erro ao verificar notificações: {e}")
         return jsonify({'has_new': False, 'error': 'Erro ao verificar notificações'})
     finally:
         if cursor:
