@@ -6,13 +6,15 @@ from flask import (
     redirect,
     url_for,
     flash,
-    jsonify
+    jsonify,
+    current_app
 )
 
 from services.database import get_db_connection
 from services.notifications import add_notification  # se alguma rota notificar
 
 import psycopg2.extras
+import os
 
 pontuacao_bp = Blueprint('pontuacao', __name__)
 
@@ -90,7 +92,7 @@ def pontuacao():
                S3_BUCKET_NAME=os.getenv('S3_BUCKET_NAME'))
 
     except Exception as e:
-        app.logger.error(f"Erro na rota pontuacao: {e}")
+        current_app.logger.error(f"Erro na rota pontuacao: {e}")
         flash('Ocorreu um erro ao carregar as pontuações.', 'error')
         return redirect(url_for('auth.index'))
     finally:
@@ -126,7 +128,7 @@ def pontuacao_avaliador():
         propostas = cursor.fetchall()
 
         # Debug opcional (remova em produção)
-        app.logger.debug(f"Propostas encontradas: {propostas}")
+        current_app.logger.debug(f"Propostas encontradas: {propostas}")
 
         return render_template('pontuacao_avaliador.html', 
                propostas=propostas,
@@ -134,7 +136,7 @@ def pontuacao_avaliador():
                )
 
     except Exception as e:
-        app.logger.error(f"Erro em pontuacao_avaliador: {e}")
+        current_app.logger.error(f"Erro em pontuacao_avaliador: {e}")
         flash('Ocorreu um erro ao carregar as propostas.', 'error')
         return redirect(url_for('auth.index'))
     finally:
@@ -173,7 +175,7 @@ def get_grupos_por_proposta(proposta_id):
         return jsonify(grupos_list)
 
     except Exception as e:
-        app.logger.error(f"Erro ao buscar grupos para proposta {proposta_id}: {e}")
+        current_app.logger.error(f"Erro ao buscar grupos para proposta {proposta_id}: {e}")
         return jsonify({
             "error": "Ocorreu um erro ao buscar os grupos",
             "details": str(e)
@@ -222,7 +224,7 @@ def get_respostas_avaliadas(proposta_id, grupo_id):
                         if cat_id and int(cat_id) in categorias_dict:
                             categorias_resposta.append(categorias_dict[int(cat_id)])
                 except (ValueError, AttributeError) as e:
-                    app.logger.warning(f"Erro ao processar categorias: {e}")
+                    current_app.logger.warning(f"Erro ao processar categorias: {e}")
 
             # Processar arquivos - agora vamos buscar diretamente do S3
             arquivos = []
@@ -238,7 +240,7 @@ def get_respostas_avaliadas(proposta_id, grupo_id):
                     arquivos_completos = [obj['Key'] for obj in response.get('Contents', [])]
                     arquivos = [arq.split('/')[-1] for arq in arquivos_completos]
                 except Exception as e:
-                    app.logger.error(f"Erro ao listar arquivos no S3: {e}")
+                    current_app.logger.error(f"Erro ao listar arquivos no S3: {e}")
 
             # Montar resposta completa
             resposta_completa = {
@@ -255,11 +257,11 @@ def get_respostas_avaliadas(proposta_id, grupo_id):
 
             respostas_completa.append(resposta_completa)
 
-        app.logger.debug(f"Respostas retornadas para proposta {proposta_id}, grupo {grupo_id}: {len(respostas_completa)} itens")
+        current_app.logger.debug(f"Respostas retornadas para proposta {proposta_id}, grupo {grupo_id}: {len(respostas_completa)} itens")
         return jsonify(respostas_completa)
 
     except Exception as e:
-        app.logger.error(f"Erro ao buscar respostas avaliadas: {e}")
+        current_app.logger.error(f"Erro ao buscar respostas avaliadas: {e}")
         return jsonify({
             "error": "Ocorreu um erro ao buscar as respostas",
             "details": str(e)
@@ -280,7 +282,7 @@ def get_categorias():
         categorias = cursor.fetchall()
         return jsonify([dict(categoria) for categoria in categorias])
     except Exception as e:
-        app.logger.error(f"Erro ao buscar categorias: {e}")
+        current_app.logger.error(f"Erro ao buscar categorias: {e}")
         return jsonify({'error': 'Erro ao buscar categorias'}), 500
     finally:
         if cursor: cursor.close()
@@ -331,7 +333,7 @@ def alterar_pontuacao_resposta(resposta_id):
         
     except Exception as e:
         conn.rollback()
-        app.logger.error(f"Erro ao alterar pontuação: {e}")
+        current_app.logger.error(f"Erro ao alterar pontuação: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         if cursor: cursor.close()
